@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Document</title>
+</head>
+<body>
+    <h1>Add Document</h1>
+    <form method="post" action="{{ url_for('add_document') }}">
+        <label for="titre">Titre:</label>
+        <input type="text" name="titre" required><br>
+        <label for="auteur">Auteur:</label>
+        <input type="text" name="auteur" required><br>
+        <label for="genre">Genre:</label>
+        <input type="text" name="genre" required><br>
+        <label for="date_publication">Date Publication:</label>
+        <input type="date" name="date_publication" required><br>
+        <label for="disponibilite">Disponibilité:</label>
+        <select name="disponibilite" required>
+            <option value="true">Disponible</option>
+            <option value="false">Indisponible</option>
+        </select><br>
+        <button type="submit">Add Document</button>
+    </form>
+</body>
+</html>

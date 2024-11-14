@@ -1,175 +1,177 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask import Flask, render_template, request, jsonify
 from flask_pymongo import PyMongo
-from models import Abonne, Document, Emprunt, init_app
+from bson import ObjectId
 
 app = Flask(__name__)
-app.config.from_object('config.Config')
+app.config['MONGO_URI'] = "mongodb://localhost:27017/mediatheque"
+mongo = PyMongo(app)
 
-# Initialiser la connexion MongoDB
-mongo = PyMongo(app, uri="mongodb://localhost:27017/mediatheque")
-
+# Route d'accueil
 @app.route('/')
-def Homme():
+def index():
     documents = mongo.db.documents.find()
-    return "hello"
-         #render_template('index.html', documents=documents)
+    documents_list = [
+        {
+            "titre": doc["titre"],
+            "auteur": doc["auteur"],
+            "genre": doc["genre"],
+            "date_publication": doc["date_publication"],
+            "disponibilite": doc["disponibilite"]
+        } for doc in documents
+    ]
+    return render_template('index.html', documents=documents_list)
 
-
-@app.route('/add_abonne', methods=['GET', 'POST'])
+# Routes pour les abonnés
+@app.route('/add_abonne', methods=['POST'])
 def add_abonne():
-    if request.method == 'POST':
-        try:
-            # Utiliser request.json pour obtenir les données JSON envoyées en POST
-            data = request.json
-            nom = data.get('nom')
-            prenom = data.get('prenom')
-            adresse = data.get('adresse')
-            date_inscription = data.get('date_inscription')
+    data = request.json
+    nom = data.get('nom')
+    prenom = data.get('prenom')
+    adresse = data.get('adresse')
+    date_inscription = data.get('date_inscription')
 
-            # Imprimer les données pour déboguer
-            print(f"Received data: nom={nom}, prenom={prenom}, adresse={adresse}, date_inscription={date_inscription}")
-            
-            # Vérifier si tous les champs nécessaires sont fournis
-            if not nom or not prenom or not adresse or not date_inscription:
-                return jsonify({"error": "Missing required fields"}), 400
-            
-            # Créer un nouvel Abonne et l'enregistrer dans MongoDB
-            abonne = Abonne(nom, prenom, adresse, date_inscription)
-            abonne.save()  # Sauvegarder les données dans MongoDB
-            return jsonify({"message": "Abonne ajouté avec succès!"}), 201
-        except Exception as e:
-            print(f"Error during form processing: {str(e)}")
-            return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+    if not all([nom, prenom, adresse, date_inscription]):
+        return jsonify({"error": "Missing required fields"}), 400
     
-    return render_template('add_abonne.html')
-@app.route('/add_document', methods=['GET', 'POST'])
+    abonne_data = {
+        "nom": nom,
+        "prenom": prenom,
+        "adresse": adresse,
+        "date_inscription": date_inscription
+    }
+    mongo.db.abonnes.insert_one(abonne_data)
+    return jsonify({"message": "Abonné ajouté avec succès!"}), 201
+
+@app.route('/get_abonne/<abonne_id>', methods=['GET'])
+def get_abonne(abonne_id):
+    try:
+        abonne = mongo.db.abonnes.find_one({"_id": ObjectId(abonne_id)})
+        if abonne:
+            abonne["_id"] = str(abonne["_id"])
+            return jsonify(abonne), 200
+        else:
+            return jsonify({"error": "Abonné not found"}), 404
+    except Exception:
+        return jsonify({"error": "Invalid ID format"}), 400
+
+@app.route('/update_abonne/<abonne_id>', methods=['PUT'])
+def update_abonne(abonne_id):
+    try:
+        data = request.json
+        mongo.db.abonnes.update_one({"_id": ObjectId(abonne_id)}, {"$set": data})
+        return jsonify({"message": "Abonné mis à jour avec succès!"}), 200
+    except Exception:
+        return jsonify({"error": "Invalid ID format"}), 400
+
+@app.route('/delete_abonne/<abonne_id>', methods=['DELETE'])
+def delete_abonne(abonne_id):
+    try:
+        mongo.db.abonnes.delete_one({"_id": ObjectId(abonne_id)})
+        return jsonify({"message": "Abonné supprimé avec succès!"}), 200
+    except Exception:
+        return jsonify({"error": "Invalid ID format"}), 400
+
+# Routes pour les documents
+@app.route('/add_document', methods=['POST'])
 def add_document():
-    if request.method == 'POST':
-        titre = request.form['titre']
-        auteur = request.form['auteur']
-        genre = request.form['genre']
-        date_publication = request.form['date_publication']
-        disponibilite = request.form.get('disponibilite') == 'on'
-        
-        # Créer et sauvegarder le document
-        document = Document(titre, auteur, genre, date_publication, disponibilite)
-        document.save()
-        
-        return redirect(url_for('index'))
-    
-    genres = ['Classique', 'Science-fiction', 'Fantastique', 'Roman', 'Histoire']
-    return render_template('add_document.html', genres=genres)
+    data = request.json
+    titre = data.get('titre')
+    auteur = data.get('auteur')
+    genre = data.get('genre')
+    date_publication = data.get('date_publication')
+    disponibilite = data.get('disponibilite')
 
+    if not all([titre, auteur, genre, date_publication, disponibilite]):
+        return jsonify({"error": "Missing required fields"}), 400
+    
+    document_data = {
+        "titre": titre,
+        "auteur": auteur,
+        "genre": genre,
+        "date_publication": date_publication,
+        "disponibilite": disponibilite
+    }
+    mongo.db.documents.insert_one(document_data)
+    return jsonify({"message": "Document ajouté avec succès!"}), 201
+
+@app.route('/get_document/<document_id>', methods=['GET'])
+def get_document(document_id):
+    try:
+        document = mongo.db.documents.find_one({"_id": ObjectId(document_id)})
+        if document:
+            document["_id"] = str(document["_id"])
+            return jsonify(document), 200
+        else:
+            return jsonify({"error": "Document not found"}), 404
+    except Exception:
+        return jsonify({"error": "Invalid ID format"}), 400
+
+@app.route('/update_document/<document_id>', methods=['PUT'])
+def update_document(document_id):
+    try:
+        data = request.json
+        mongo.db.documents.update_one({"_id": ObjectId(document_id)}, {"$set": data})
+        return jsonify({"message": "Document mis à jour avec succès!"}), 200
+    except Exception:
+        return jsonify({"error": "Invalid ID format"}), 400
+
+@app.route('/delete_document/<document_id>', methods=['DELETE'])
+def delete_document(document_id):
+    try:
+        mongo.db.documents.delete_one({"_id": ObjectId(document_id)})
+        return jsonify({"message": "Document supprimé avec succès!"}), 200
+    except Exception:
+        return jsonify({"error": "Invalid ID format"}), 400
+
+# Routes pour les emprunts
 @app.route('/add_emprunt', methods=['POST'])
 def add_emprunt():
-    if request.method == 'POST':
-        abonne_id = request.json.get('abonne_id')
-        document_id = request.json.get('document_id')
-        date_emprunt = request.json.get('date_emprunt')
-        date_retour = request.json.get('date_retour')
-        
-        if not abonne_id or not document_id or not date_emprunt or not date_retour:
-            return jsonify({"error": "Tous les champs sont requis"}), 400
-        
-        # Créer et sauvegarder l'emprunt
-        emprunt = Emprunt(abonne_id, document_id, date_emprunt, date_retour)
-        emprunt.save()
-        
-        return jsonify({"message": "Emprunt ajouté avec succès!"}), 201
+    data = request.json
+    abonne_id = data.get('abonne_id')
+    document_id = data.get('document_id')
+    date_emprunt = data.get('date_emprunt')
+    date_retour = data.get('date_retour')
 
-@app.route('/emprunts', methods=['GET'])
-def get_emprunts():
-    emprunts = mongo.db.emprunts.find()
-    emprunts_list = []
-    for emprunt in emprunts:
-        emprunts_list.append({
-            "abonne_id": emprunt["abonne_id"],
-            "document_id": emprunt["document_id"],
-            "date_emprunt": emprunt["date_emprunt"],
-            "date_retour": emprunt["date_retour"]
-        })
-    return jsonify(emprunts_list)
+    if not all([abonne_id, document_id, date_emprunt, date_retour]):
+        return jsonify({"error": "Missing required fields"}), 400
+    
+    emprunt_data = {
+        "abonne_id": abonne_id,
+        "document_id": document_id,
+        "date_emprunt": date_emprunt,
+        "date_retour": date_retour
+    }
+    mongo.db.emprunts.insert_one(emprunt_data)
+    return jsonify({"message": "Emprunt ajouté avec succès!"}), 201
 
-@app.route('/test_insert_abonne')
-def test_insert_abonne():
+@app.route('/get_emprunt/<emprunt_id>', methods=['GET'])
+def get_emprunt(emprunt_id):
     try:
-        abonne_data = {
-            "nom": "Test",
-            "prenom": "Test",
-            "adresse": "Test Address",
-            "date_inscription": "2024-11-14"
-        }
-        mongo.db.abonnes.insert_one(abonne_data)
-        return "Test Abonne inserted successfully!"
-    except Exception as e:
-        return f"Error inserting Abonne: {str(e)}"
+        emprunt = mongo.db.emprunts.find_one({"_id": ObjectId(emprunt_id)})
+        if emprunt:
+            emprunt["_id"] = str(emprunt["_id"])
+            return jsonify(emprunt), 200
+        else:
+            return jsonify({"error": "Emprunt not found"}), 404
+    except Exception:
+        return jsonify({"error": "Invalid ID format"}), 400
 
-# Méthode save() pour l'Abonne
-class Abonne:
-    def __init__(self, nom, prenom, adresse, date_inscription):
-        self.nom = nom
-        self.prenom = prenom
-        self.adresse = adresse
-        self.date_inscription = date_inscription
+@app.route('/update_emprunt/<emprunt_id>', methods=['PUT'])
+def update_emprunt(emprunt_id):
+    try:
+        data = request.json
+        mongo.db.emprunts.update_one({"_id": ObjectId(emprunt_id)}, {"$set": data})
+        return jsonify({"message": "Emprunt mis à jour avec succès!"}), 200
+    except Exception:
+        return jsonify({"error": "Invalid ID format"}), 400
 
-    def save(self):
-        abonne_data = {
-            "nom": self.nom,
-            "prenom": self.prenom,
-            "adresse": self.adresse,
-            "date_inscription": self.date_inscription
-        }
-        
-        try:
-            mongo.db.abonnes.insert_one(abonne_data)
-            print(f"Abonne data inserted: {abonne_data}")
-        except Exception as e:
-            print(f"Error saving Abonne: {e}")
-            raise
-
-def add_document():
-    if request.method == 'POST':
-        titre = request.form['titre']
-        auteur = request.form['auteur']
-        genre = request.form['genre']
-        date_publication = request.form['date_publication']
-        disponibilite = request.form.get('disponibilite') == 'on'
-        
-        # Créer et sauvegarder le document
-        document = Document(titre, auteur, genre, date_publication, disponibilite)
-        document.save()
-        
-        return redirect(url_for('index'))
-    
-    # Définir les genres sous forme de tableau
-    genres = ['Classique', 'Science-fiction', 'Fantastique', 'Roman', 'Histoire']
-    
-    # Passer le tableau des genres au template
-    return render_template('add_document.html', genres=genres)
-
-
-class Emprunt:
-    def __init__(self, abonne_id, document_id, date_emprunt, date_retour):
-        self.abonne_id = abonne_id
-        self.document_id = document_id
-        self.date_emprunt = date_emprunt
-        self.date_retour = date_retour
-
-    def save(self):
-        emprunt_data = {
-            "abonne_id": self.abonne_id,
-            "document_id": self.document_id,
-            "date_emprunt": self.date_emprunt,
-            "date_retour": self.date_retour
-        }
-
-        try:
-            mongo.db.emprunts.insert_one(emprunt_data)
-            print(f"Emprunt inserted: {emprunt_data}")
-        except Exception as e:
-            print(f"Error saving Emprunt: {e}")
-            raise
-
+@app.route('/delete_emprunt/<emprunt_id>', methods=['DELETE'])
+def delete_emprunt(emprunt_id):
+    try:
+        mongo.db.emprunts.delete_one({"_id": ObjectId(emprunt_id)})
+        return jsonify({"message": "Emprunt supprimé avec succès!"}), 200
+    except Exception:
+        return jsonify({"error": "Invalid ID format"}), 400
 
 if __name__ == '__main__':
     app.run(debug=True)

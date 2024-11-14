@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Document List</title>
+</head>
+<body>
+    <h1>Documents</h1>
+    <ul>
+        {% for doc in documents %}
+            <li>{{ doc['titre'] }} by {{ doc['auteur'] }} - {{ doc['genre'] }}</li>
+        {% endfor %}
+    </ul>
+    <a href="{{ url_for('add_abonne') }}">Add Abonne</a>
+    <a href="{{ url_for('add_document') }}">Add Document</a>
+    <a href="{{ url_for('add_emprunt') }}">Add Emprunt</a>
+</body>
+</html>

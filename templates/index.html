@@ -1,18 +1,19 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Document List</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mediatheque</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
-    <h1>Documents</h1>
-    <ul>
-        {% for doc in documents %}
-            <li>{{ doc['titre'] }} by {{ doc['auteur'] }} - {{ doc['genre'] }}</li>
-        {% endfor %}
-    </ul>
-    <a href="{{ url_for('add_abonne') }}">Add Abonne</a>
-    <a href="{{ url_for('add_document') }}">Add Document</a>
-    <a href="{{ url_for('add_emprunt') }}">Add Emprunt</a>
+    <h1>Bienvenue à la Médiathèque</h1>
+    <nav>
+        <ul>
+            <li><a href="/abonne">Abonnés</a></li>
+            <li><a href="/document">Documents</a></li>
+            <li><a href="/emprunt">Emprunts</a></li>
+        </ul>
+    </nav>
 </body>
 </html>

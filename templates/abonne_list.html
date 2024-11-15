@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Abonnés - Médiathèque</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+</head>
+<body>
+    <h1>Liste des Abonnés</h1>
+    <table id="abonne-table">
+        <thead>
+            <tr>
+                <th>Nom</th>
+                <th>Prénom</th>
+                <th>Adresse</th>
+                <th>Date d'inscription</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for abonne in abonnés %}
+            <tr id="abonne-{{ loop.index }}">
+                <td>{{ abonne.nom }}</td>
+                <td>{{ abonne.prenom }}</td>
+                <td>{{ abonne.adresse }}</td>
+                <td>{{ abonne.date_inscription }}</td>
+                <td>
+                    <button onclick="showPopup('edit', '{{ loop.index }}')">Modifier</button>
+                    <button onclick="deleteAbonne('{{ loop.index }}')">Supprimer</button>
+                    <button onclick="showPopup('view', '{{ loop.index }}')">Consulter</button>
+                </td>
+                
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <button onclick="showPopup('add')">Ajouter un Abonné</button>
+
+    <!-- Popup Modal -->
+    <div id="popup-modal" class="popup">
+        <div class="popup-content">
+            <h2 id="popup-title"></h2>
+            <form id="abonne-form">
+                <label for="nom">Nom</label>
+                <input type="text" id="nom" name="nom" required>
+
+                <label for="prenom">Prénom</label>
+                <input type="text" id="prenom" name="prenom" required>
+
+                <label for="adresse">Adresse</label>
+                <input type="text" id="adresse" name="adresse" required>
+
+                <label for="date_inscription">Date d'inscription</label>
+                <input type="date" id="date_inscription" name="date_inscription" required>
+
+                <button type="submit">Enregistrer</button>
+                <button type="button" onclick="closePopup()">Annuler</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

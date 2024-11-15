@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajouter un Emprunt</title>
+</head>
+<body>
+    <h1>Ajouter un Emprunt</h1>
+    <form id="emprunt-form">
+        <label for="abonne_id">ID Abonné:</label>
+        <input type="text" id="abonne_id" name="abonne_id" required><br>
+
+        <label for="document_id">ID Document:</label>
+        <input type="text" id="document_id" name="document_id" required><br>
+
+        <label for="date_emprunt">Date d'Emprunt:</label>
+        <input type="date" id="date_emprunt" name="date_emprunt" required><br>
+
+        <label for="date_retour">Date de Retour:</label>
+        <input type="date" id="date_retour" name="date_retour" required><br>
+
+        <button type="submit">Ajouter</button>
+    </form>
+
+    <script>
+        document.getElementById("emprunt-form").addEventListener("submit", function(event) {
+            event.preventDefault();
+            
+            const data = {
+                abonne_id: document.getElementById("abonne_id").value,
+                document_id: document.getElementById("document_id").value,
+                date_emprunt: document.getElementById("date_emprunt").value,
+                date_retour: document.getElementById("date_retour").value
+            };
+
+            fetch('/add_emprunt', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).then(response => response.json()).then(data => {
+                alert(data.message);
+                window.location.href = '/';  // Retour à la page d'accueil
+            }).catch(error => alert('Erreur: ' + error));
+        });
+    </script>
+</body>
+</html>

@@ -1,26 +1,52 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Add Document</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajouter un Document</title>
 </head>
 <body>
-    <h1>Add Document</h1>
-    <form method="post" action="{{ url_for('add_document') }}">
+    <h1>Ajouter un Document</h1>
+    <form id="document-form">
         <label for="titre">Titre:</label>
-        <input type="text" name="titre" required><br>
+        <input type="text" id="titre" name="titre" required><br>
+        
         <label for="auteur">Auteur:</label>
-        <input type="text" name="auteur" required><br>
+        <input type="text" id="auteur" name="auteur" required><br>
+
         <label for="genre">Genre:</label>
-        <input type="text" name="genre" required><br>
-        <label for="date_publication">Date Publication:</label>
-        <input type="date" name="date_publication" required><br>
+        <input type="text" id="genre" name="genre" required><br>
+
+        <label for="date_publication">Date de Publication:</label>
+        <input type="date" id="date_publication" name="date_publication" required><br>
+
         <label for="disponibilite">Disponibilité:</label>
-        <select name="disponibilite" required>
-            <option value="true">Disponible</option>
-            <option value="false">Indisponible</option>
-        </select><br>
-        <button type="submit">Add Document</button>
+        <input type="text" id="disponibilite" name="disponibilite" required><br>
+
+        <button type="submit">Ajouter</button>
     </form>
+
+    <script>
+        document.getElementById("document-form").addEventListener("submit", function(event) {
+            event.preventDefault();
+            
+            const data = {
+                titre: document.getElementById("titre").value,
+                auteur: document.getElementById("auteur").value,
+                genre: document.getElementById("genre").value,
+                date_publication: document.getElementById("date_publication").value,
+                disponibilite: document.getElementById("disponibilite").value
+            };
+
+            fetch('/add_document', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).then(response => response.json()).then(data => {
+                alert(data.message);
+                window.location.href = '/';  // Retour à la page d'accueil
+            }).catch(error => alert('Erreur: ' + error));
+        });
+    </script>
 </body>
 </html>

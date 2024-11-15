@@ -22,6 +22,20 @@ def index():
     return render_template('index.html', documents=documents_list)
 
 # Routes pour les abonnés
+
+@app.route('/abonne')
+def get_abonnes():
+    abonnés = mongo.db.abonnes.find()
+    abonnes_list = [
+        {
+            "nom": abonne["nom"],
+            "prenom": abonne["prenom"],
+            "adresse": abonne["adresse"],
+            "date_inscription": abonne["date_inscription"]
+        } for abonne in abonnés
+    ]
+    return render_template('abonne_list.html', abonnés=abonnes_list)
+
 @app.route('/add_abonne', methods=['POST'])
 def add_abonne():
     data = request.json
@@ -53,6 +67,7 @@ def get_abonne(abonne_id):
             return jsonify({"error": "Abonné not found"}), 404
     except Exception:
         return jsonify({"error": "Invalid ID format"}), 400
+
 
 @app.route('/update_abonne/<abonne_id>', methods=['PUT'])
 def update_abonne(abonne_id):
@@ -122,6 +137,8 @@ def delete_document(document_id):
         return jsonify({"message": "Document supprimé avec succès!"}), 200
     except Exception:
         return jsonify({"error": "Invalid ID format"}), 400
+
+
 
 # Routes pour les emprunts
 @app.route('/add_emprunt', methods=['POST'])

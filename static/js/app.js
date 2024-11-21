@@ -56,12 +56,11 @@ $(document).ready(function() {
                 $('#date_inscription').val(response.date_inscription);
                 
                 // Update the form action to edit
-               $('#abonneForm').off('submit').on('submit', function(e) {
-    e.preventDefault();
-    updateAbonne(id);
-});
+                $('#abonneForm').off('submit').on('submit', function(e) {
+                    e.preventDefault();
+                    updateAbonne(id);
+                });
 
-                
                 $('#addAbonneModal').modal('show');
             }
         });

@@ -22,12 +22,13 @@ def index():
     return render_template('index.html', documents=documents_list)
 
 # Routes pour les abonnés
-
+# Routes pour les abonnés
 @app.route('/abonne')
 def get_abonnes():
     abonnés = mongo.db.abonnes.find()
     abonnes_list = [
         {
+            "id": str(abonne["_id"]),  # Convert ObjectId en chaîne
             "nom": abonne["nom"],
             "prenom": abonne["prenom"],
             "adresse": abonne["adresse"],
@@ -39,52 +40,44 @@ def get_abonnes():
 @app.route('/add_abonne', methods=['POST'])
 def add_abonne():
     data = request.json
-    nom = data.get('nom')
-    prenom = data.get('prenom')
-    adresse = data.get('adresse')
-    date_inscription = data.get('date_inscription')
-
-    if not all([nom, prenom, adresse, date_inscription]):
-        return jsonify({"error": "Missing required fields"}), 400
-    
-    abonne_data = {
-        "nom": nom,
-        "prenom": prenom,
-        "adresse": adresse,
-        "date_inscription": date_inscription
-    }
-    mongo.db.abonnes.insert_one(abonne_data)
-    return jsonify({"message": "Abonné ajouté avec succès!"}), 201
-
-@app.route('/get_abonne/<abonne_id>', methods=['GET'])
-def get_abonne(abonne_id):
     try:
-        abonne = mongo.db.abonnes.find_one({"_id": ObjectId(abonne_id)})
+        mongo.db.abonnes.insert_one(data)
+        return jsonify({"message": "Abonné ajouté avec succès!"}), 201
+    except Exception as e:
+        app.logger.error(f"Error adding abonne: {e}")
+        return jsonify({"error": "Erreur interne du serveur"}), 500
+
+@app.route('/get_abonne/<id>', methods=['GET'])
+def get_abonne(id):
+    try:
+        abonne_id = ObjectId(id)
+        abonne = mongo.db.abonnes.find_one({"_id": abonne_id})
         if abonne:
-            abonne["_id"] = str(abonne["_id"])
+            abonne["_id"] = str(abonne["_id"])  # Convertir l'ObjectId en chaîne avant de le retourner
             return jsonify(abonne), 200
         else:
-            return jsonify({"error": "Abonné not found"}), 404
-    except Exception:
-        return jsonify({"error": "Invalid ID format"}), 400
+            return jsonify({"error": "Abonné non trouvé"}), 404
+    except Exception as e:
+        return jsonify({"error": "Erreur lors de la récupération de l'abonné"}), 500
 
-
-@app.route('/update_abonne/<abonne_id>', methods=['PUT'])
-def update_abonne(abonne_id):
+@app.route('/update_abonne/<id>', methods=['PUT'])
+def update_abonne(id):
+    data = request.json
     try:
-        data = request.json
-        mongo.db.abonnes.update_one({"_id": ObjectId(abonne_id)}, {"$set": data})
-        return jsonify({"message": "Abonné mis à jour avec succès!"}), 200
-    except Exception:
-        return jsonify({"error": "Invalid ID format"}), 400
+        abonne_id = ObjectId(id)
+        mongo.db.abonnes.update_one({"_id": abonne_id}, {"$set": data})
+        return jsonify({"message": "Abonné mis à jour avec succès!"})
+    except Exception as e:
+        return jsonify({"error": "Erreur lors de la mise à jour de l'abonné"}), 500
 
-@app.route('/delete_abonne/<abonne_id>', methods=['DELETE'])
-def delete_abonne(abonne_id):
+@app.route('/delete_abonne/<id>', methods=['DELETE'])
+def delete_abonne(id):
     try:
-        mongo.db.abonnes.delete_one({"_id": ObjectId(abonne_id)})
-        return jsonify({"message": "Abonné supprimé avec succès!"}), 200
-    except Exception:
-        return jsonify({"error": "Invalid ID format"}), 400
+        abonne_id = ObjectId(id)
+        mongo.db.abonnes.delete_one({"_id": abonne_id})
+        return jsonify({"message": "Abonné supprimé avec succès!"})
+    except Exception as e:
+        return jsonify({"error": "Erreur lors de la suppression de l'abonné"}), 500
 
 # Routes pour les documents
 @app.route('/add_document', methods=['POST'])

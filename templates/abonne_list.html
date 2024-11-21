@@ -3,63 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Abonnés - Médiathèque</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-    <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+    <title>Liste des Abonnés</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css">
 </head>
 <body>
-    <h1>Liste des Abonnés</h1>
-    <table id="abonne-table">
-        <thead>
-            <tr>
-                <th>Nom</th>
-                <th>Prénom</th>
-                <th>Adresse</th>
-                <th>Date d'inscription</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for abonne in abonnés %}
-            <tr id="abonne-{{ loop.index }}">
-                <td>{{ abonne.nom }}</td>
-                <td>{{ abonne.prenom }}</td>
-                <td>{{ abonne.adresse }}</td>
-                <td>{{ abonne.date_inscription }}</td>
-                <td>
-                    <button onclick="showPopup('edit', '{{ loop.index }}')">Modifier</button>
-                    <button onclick="deleteAbonne('{{ loop.index }}')">Supprimer</button>
-                    <button onclick="showPopup('view', '{{ loop.index }}')">Consulter</button>
-                </td>
-                
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="container mt-5">
+        <h1>Liste des Abonnés</h1>
 
-    <button onclick="showPopup('add')">Ajouter un Abonné</button>
+        <!-- Tableau des abonnés -->
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nom</th>
+                    <th>Prénom</th>
+                    <th>Adresse</th>
+                    <th>Date d'Inscription</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for abonne in abonnés %}
+                <tr>
+                    <td>{{ abonne.id }}</td>
+                    <td>{{ abonne.nom }}</td>
+                    <td>{{ abonne.prenom }}</td>
+                    <td>{{ abonne.adresse }}</td>
+                    <td>{{ abonne.date_inscription }}</td>
+                    <td>
+                        <button class="btn btn-info" onclick="viewAbonne('{{ abonne.id }}')">Consulter</button>
+                        <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#editAbonneModal" onclick="prepareEditForm('{{ abonne.id }}')">Modifier</button>
+                        <button class="btn btn-danger" onclick="deleteAbonne('{{ abonne.id }}')">Supprimer</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
 
-    <!-- Popup Modal -->
-    <div id="popup-modal" class="popup">
-        <div class="popup-content">
-            <h2 id="popup-title"></h2>
-            <form id="abonne-form">
-                <label for="nom">Nom</label>
-                <input type="text" id="nom" name="nom" required>
+        <!-- Bouton pour ajouter un abonné -->
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addAbonneModal">Ajouter un Abonné</button>
 
-                <label for="prenom">Prénom</label>
-                <input type="text" id="prenom" name="prenom" required>
+        <!-- Modale Ajouter -->
+        <div class="modal fade" id="addAbonneModal" tabindex="-1" aria-labelledby="addAbonneModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addAbonneModalLabel">Ajouter un Abonné</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="addAbonneForm">
+                            <div class="mb-3">
+                                <label for="addNom" class="form-label">Nom</label>
+                                <input type="text" class="form-control" id="addNom" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="addPrenom" class="form-label">Prénom</label>
+                                <input type="text" class="form-control" id="addPrenom" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="addAdresse" class="form-label">Adresse</label>
+                                <input type="text" class="form-control" id="addAdresse" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="addDateInscription" class="form-label">Date d'Inscription</label>
+                                <input type="date" class="form-control" id="addDateInscription" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Ajouter</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                <label for="adresse">Adresse</label>
-                <input type="text" id="adresse" name="adresse" required>
-
-                <label for="date_inscription">Date d'inscription</label>
-                <input type="date" id="date_inscription" name="date_inscription" required>
-
-                <button type="submit">Enregistrer</button>
-                <button type="button" onclick="closePopup()">Annuler</button>
-            </form>
+        <!-- Modale Modifier -->
+        <div class="modal fade" id="editAbonneModal" tabindex="-1" aria-labelledby="editAbonneModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editAbonneModalLabel">Modifier un Abonné</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="editAbonneForm">
+                            <input type="hidden" id="editAbonneId">
+                            <div class="mb-3">
+                                <label for="editNom" class="form-label">Nom</label>
+                                <input type="text" class="form-control" id="editNom" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editPrenom" class="form-label">Prénom</label>
+                                <input type="text" class="form-control" id="editPrenom" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editAdresse" class="form-label">Adresse</label>
+                                <input type="text" class="form-control" id="editAdresse" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editDateInscription" class="form-label">Date d'Inscription</label>
+                                <input type="date" class="form-control" id="editDateInscription" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Modifier</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
 </body>
 </html>

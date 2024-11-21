@@ -3,17 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mediatheque</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <title>Médiathèque</title>
+    <style>
+        /* Style général */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+
+        /* En-tête */
+        header {
+            text-align: center;
+            padding: 20px;
+            background-color: #4CAF50; /* Couleur principale */
+            color: white;
+        }
+
+        /* Barre de navigation */
+        .navbar {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            background-color: #333; /* Couleur de fond */
+        }
+
+        .navbar li {
+            margin: 0 15px;
+        }
+
+        .navbar a {
+            text-decoration: none;
+            color: white; /* Couleur du texte */
+            padding: 10px 20px;
+            border-radius: 5px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Effets au survol */
+        .navbar a:hover {
+            background-color: #4CAF50; /* Fond au survol */
+            color: white; /* Texte au survol */
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 600px) {
+            .navbar {
+                flex-direction: column; /* Empile les liens */
+            }
+            .navbar li {
+                margin: 10px 0;
+            }
+        }
+    </style>
 </head>
 <body>
-    <h1>Bienvenue à la Médiathèque</h1>
-    <nav>
-        <ul>
-            <li><a href="/abonne">Abonnés</a></li>
-            <li><a href="/document">Documents</a></li>
-            <li><a href="/emprunt">Emprunts</a></li>
-        </ul>
-    </nav>
+    <header>
+        <h1>Bienvenue à la Médiathèque</h1>
+        <nav>
+            <ul class="navbar">
+                <li><a href="/abonne">Abonnés</a></li>
+                <li><a href="/documents">Documents</a></li>
+                <li><a href="/emprunt">Emprunts</a></li>
+            </ul>
+        </nav>
+    </header>
 </body>
 </html>
+
+
+
+
+

@@ -3,15 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Liste des Abonnés</title>
+    <title>Médiathèque</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css">
-    
+    <style>
+        /* Style général */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+
+        /* En-tête */
+        header {
+            text-align: center;
+            padding: 20px;
+            background-color: #4CAF50; /* Couleur principale */
+            color: white;
+        }
+
+        /* Barre de navigation */
+        .navbar {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            background-color: #333; /* Couleur de fond */
+        }
+
+        .navbar li {
+            margin: 0 15px;
+        }
+
+        .navbar a {
+            text-decoration: none;
+            color: white; /* Couleur du texte */
+            padding: 10px 20px;
+            border-radius: 5px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Effets au survol */
+        .navbar a:hover {
+            background-color: #4CAF50; /* Fond au survol */
+            color: white; /* Texte au survol */
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 600px) {
+            .navbar {
+                flex-direction: column; /* Empile les liens */
+            }
+            .navbar li {
+                margin: 10px 0;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="container mt-5">
-        <h1>Liste des Abonnés</h1>
+    <header>
+        <h1>Bienvenue à la Médiathèque</h1>
+        <nav>
+            <ul class="navbar">
+                <li><a href="#abonneSection">Abonnés</a></li>
+                <li><a href="/documents">Documents</a></li>
+                <li><a href="/emprunt">Emprunts</a></li>
+            </ul>
+        </nav>
+    </header>
 
-        <!-- Table of abonnés -->
+    <!-- Liste des abonnés -->
+    <div class="container mt-5" id="abonneSection">
+        <h1>Liste des Abonnés</h1>
         <table class="table table-bordered">
             <thead>
                 <tr>
@@ -41,46 +106,46 @@
             </tbody>
         </table>
 
-    <!-- Bouton pour ajouter un abonné -->
-<button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addAbonneModal" onclick="openAddModal()">Ajouter un Abonné</button>
+        <!-- Bouton pour ajouter un abonné -->
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addAbonneModal" onclick="openAddModal()">Ajouter un Abonné</button>
 
-<!-- Modale Ajouter/Modifier -->
-<div class="modal fade" id="addAbonneModal" tabindex="-1" aria-labelledby="addAbonneModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="addAbonneModalLabel">Ajouter/Modifier un Abonné</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="abonneForm">
-                    <input type="hidden" id="abonneId">
-                    <div class="mb-3">
-                        <label for="nom" class="form-label">Nom</label>
-                        <input type="text" class="form-control" id="nom" required>
+        <!-- Modale Ajouter/Modifier -->
+        <div class="modal fade" id="addAbonneModal" tabindex="-1" aria-labelledby="addAbonneModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addAbonneModalLabel">Ajouter/Modifier un Abonné</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <div class="mb-3">
-                        <label for="prenom" class="form-label">Prénom</label>
-                        <input type="text" class="form-control" id="prenom" required>
+                    <div class="modal-body">
+                        <form id="abonneForm">
+                            <input type="hidden" id="abonneId">
+                            <div class="mb-3">
+                                <label for="nom" class="form-label">Nom</label>
+                                <input type="text" class="form-control" id="nom" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="prenom" class="form-label">Prénom</label>
+                                <input type="text" class="form-control" id="prenom" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="adresse" class="form-label">Adresse</label>
+                                <input type="text" class="form-control" id="adresse" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="date_inscription" class="form-label">Date d'Inscription</label>
+                                <input type="date" class="form-control" id="date_inscription" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Enregistrer</button>
+                        </form>
                     </div>
-                    <div class="mb-3">
-                        <label for="adresse" class="form-label">Adresse</label>
-                        <input type="text" class="form-control" id="adresse" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="date_inscription" class="form-label">Date d'Inscription</label>
-                        <input type="date" class="form-control" id="date_inscription" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Enregistrer</button>
-                </form>
+                </div>
             </div>
         </div>
     </div>
-</div>
-
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
 </body>
-</html>   
+</html>

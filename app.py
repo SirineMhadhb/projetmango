@@ -12,6 +12,7 @@ def index():
     documents = mongo.db.documents.find()
     documents_list = [
         {
+            "id": str(doc["_id"]),  # Convert ObjectId en chaîne
             "titre": doc["titre"],
             "auteur": doc["auteur"],
             "genre": doc["genre"],
@@ -19,9 +20,8 @@ def index():
             "disponibilite": doc["disponibilite"]
         } for doc in documents
     ]
-    return render_template('index.html', documents=documents_list)
+    return render_template('abonne.html', documents=documents_list)
 
-# Routes pour les abonnés
 # Routes pour les abonnés
 @app.route('/abonne')
 def get_abonnes():
@@ -80,58 +80,62 @@ def delete_abonne(id):
         return jsonify({"error": "Erreur lors de la suppression de l'abonné"}), 500
 
 # Routes pour les documents
+@app.route('/documents')
+def get_documents():
+    documents = mongo.db.documents.find()
+    documents_list = [
+        {
+            "id": str(doc["_id"]),
+            "titre": doc["titre"],
+            "auteur": doc["auteur"],
+            "genre": doc["genre"],
+            "date_publication": doc["date_publication"],
+            "disponibilite": doc["disponibilite"]
+        } for doc in documents
+    ]
+    return render_template('document_list.html', documents=documents_list)
+
 @app.route('/add_document', methods=['POST'])
 def add_document():
     data = request.json
-    titre = data.get('titre')
-    auteur = data.get('auteur')
-    genre = data.get('genre')
-    date_publication = data.get('date_publication')
-    disponibilite = data.get('disponibilite')
-
-    if not all([titre, auteur, genre, date_publication, disponibilite]):
-        return jsonify({"error": "Missing required fields"}), 400
-    
-    document_data = {
-        "titre": titre,
-        "auteur": auteur,
-        "genre": genre,
-        "date_publication": date_publication,
-        "disponibilite": disponibilite
-    }
-    mongo.db.documents.insert_one(document_data)
-    return jsonify({"message": "Document ajouté avec succès!"}), 201
-
-@app.route('/get_document/<document_id>', methods=['GET'])
-def get_document(document_id):
     try:
-        document = mongo.db.documents.find_one({"_id": ObjectId(document_id)})
+        mongo.db.documents.insert_one(data)
+        return jsonify({"message": "Document ajouté avec succès!"}), 201
+    except Exception as e:
+        app.logger.error(f"Error adding document: {e}")
+        return jsonify({"error": "Erreur interne du serveur"}), 500
+
+@app.route('/get_document/<id>', methods=['GET'])
+def get_document(id):
+    try:
+        document_id = ObjectId(id)
+        document = mongo.db.documents.find_one({"_id": document_id})
         if document:
             document["_id"] = str(document["_id"])
             return jsonify(document), 200
         else:
-            return jsonify({"error": "Document not found"}), 404
-    except Exception:
-        return jsonify({"error": "Invalid ID format"}), 400
+            return jsonify({"error": "Document non trouvé"}), 404
+    except Exception as e:
+        return jsonify({"error": "Erreur lors de la récupération du document"}), 500
 
-@app.route('/update_document/<document_id>', methods=['PUT'])
-def update_document(document_id):
+@app.route('/update_document/<id>', methods=['PUT'])
+def update_document(id):
+    data = request.json
     try:
-        data = request.json
-        mongo.db.documents.update_one({"_id": ObjectId(document_id)}, {"$set": data})
-        return jsonify({"message": "Document mis à jour avec succès!"}), 200
-    except Exception:
-        return jsonify({"error": "Invalid ID format"}), 400
+        document_id = ObjectId(id)
+        mongo.db.documents.update_one({"_id": document_id}, {"$set": data})
+        return jsonify({"message": "Document mis à jour avec succès!"})
+    except Exception as e:
+        return jsonify({"error": "Erreur lors de la mise à jour du document"}), 500
 
-@app.route('/delete_document/<document_id>', methods=['DELETE'])
-def delete_document(document_id):
+@app.route('/delete_document/<id>', methods=['DELETE'])
+def delete_document(id):
     try:
-        mongo.db.documents.delete_one({"_id": ObjectId(document_id)})
-        return jsonify({"message": "Document supprimé avec succès!"}), 200
-    except Exception:
-        return jsonify({"error": "Invalid ID format"}), 400
-
-
+        document_id = ObjectId(id)
+        mongo.db.documents.delete_one({"_id": document_id})
+        return jsonify({"message": "Document supprimé avec succès!"})
+    except Exception as e:
+        return jsonify({"error": "Erreur lors de la suppression du document"}), 500
 
 # Routes pour les emprunts
 @app.route('/add_emprunt', methods=['POST'])
@@ -162,9 +166,9 @@ def get_emprunt(emprunt_id):
             emprunt["_id"] = str(emprunt["_id"])
             return jsonify(emprunt), 200
         else:
-            return jsonify({"error": "Emprunt not found"}), 404
+            return jsonify({"error": "Emprunt non trouvé"}), 404
     except Exception:
-        return jsonify({"error": "Invalid ID format"}), 400
+        return jsonify({"error": "Erreur lors de la récupération de l'emprunt"}), 500
 
 @app.route('/update_emprunt/<emprunt_id>', methods=['PUT'])
 def update_emprunt(emprunt_id):
@@ -173,7 +177,7 @@ def update_emprunt(emprunt_id):
         mongo.db.emprunts.update_one({"_id": ObjectId(emprunt_id)}, {"$set": data})
         return jsonify({"message": "Emprunt mis à jour avec succès!"}), 200
     except Exception:
-        return jsonify({"error": "Invalid ID format"}), 400
+        return jsonify({"error": "Erreur lors de la mise à jour de l'emprunt"}), 500
 
 @app.route('/delete_emprunt/<emprunt_id>', methods=['DELETE'])
 def delete_emprunt(emprunt_id):
@@ -181,7 +185,7 @@ def delete_emprunt(emprunt_id):
         mongo.db.emprunts.delete_one({"_id": ObjectId(emprunt_id)})
         return jsonify({"message": "Emprunt supprimé avec succès!"}), 200
     except Exception:
-        return jsonify({"error": "Invalid ID format"}), 400
+        return jsonify({"error": "Erreur lors de la suppression de l'emprunt"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

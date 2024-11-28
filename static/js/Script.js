@@ -112,6 +112,45 @@ $(document).ready(function() {
             });
         }
     };
+    document.addEventListener('DOMContentLoaded', () => {
+        // Bouton pour ajouter un document
+        const addDocumentButton = document.getElementById('addDocumentButton');
+        
+        addDocumentButton.addEventListener('click', () => {
+            const titre = document.getElementById('titre').value;
+            const auteur = document.getElementById('auteur').value;
+            const genre = document.getElementById('genre').value;
+            const date_publication = document.getElementById('date_publication').value;
+            const disponibilite = document.getElementById('disponibilite').value;
+    
+            const data = {
+                titre: titre,
+                auteur: auteur,
+                genre: genre,
+                date_publication: date_publication,
+                disponibilite: disponibilite,
+            };
+    
+            // Envoi des données au serveur
+            fetch('/add_document', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            })
+            .then(response => response.json())
+            .then(result => {
+                alert(result.message);
+                location.reload();
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                alert('Erreur lors de l\'ajout du document.');
+            });
+        });
+    });
+    
 
     // Charger les documents au démarrage
     loadDocuments();

@@ -12,15 +12,14 @@ def index():
     documents = mongo.db.documents.find()
     documents_list = [
         {
-            "id": str(doc["_id"]),  # Convert ObjectId en chaîne
-            "titre": doc["titre"],
+            "id": str(doc["_id"]),  
             "auteur": doc["auteur"],
             "genre": doc["genre"],
             "date_publication": doc["date_publication"],
             "disponibilite": doc["disponibilite"]
         } for doc in documents
     ]
-    return render_template('abonne.html', documents=documents_list)
+    return render_template('abonne_list.html', documents=documents_list)
 
 # Routes pour les abonnés
 @app.route('/abonne')
@@ -28,7 +27,7 @@ def get_abonnes():
     abonnés = mongo.db.abonnes.find()
     abonnes_list = [
         {
-            "id": str(abonne["_id"]),  # Convert ObjectId en chaîne
+            "id": str(abonne["_id"]),  
             "nom": abonne["nom"],
             "prenom": abonne["prenom"],
             "adresse": abonne["adresse"],
@@ -95,15 +94,29 @@ def get_documents():
     ]
     return render_template('document_list.html', documents=documents_list)
 
-@app.route('/add_document', methods=['POST'])
-def add_document():
+@app.route('/ajouter_document', methods=['POST'])
+def ajouter_document():
     data = request.json
+    if not data:
+        return jsonify({"error": "Aucune donnée reçue"}), 400
+
+    document = data.get("document")
+    if not document:
+        return jsonify({"error": "Le champ 'document' est requis"}), 400
+
+    # Si vous avez un _id dans le document, il faut le convertir en chaîne
+    if "_id" in document:
+        document["_id"] = str(document["_id"])
+
+    print("Document à insérer:", document)  # Affiche le document avant insertion
+
     try:
-        mongo.db.documents.insert_one(data)
-        return jsonify({"message": "Document ajouté avec succès!"}), 201
+        result = mongo.db.documents.insert_one(document)
+        # Convertir _id en chaîne dans la réponse avant de renvoyer
+        document["_id"] = str(result.inserted_id)  # Convertir l'ID généré en chaîne
+        return jsonify({"message": "Document ajouté avec succès", "document": document}), 201
     except Exception as e:
-        app.logger.error(f"Error adding document: {e}")
-        return jsonify({"error": "Erreur interne du serveur"}), 500
+        return jsonify({"error": f"Erreur lors de l'ajout du document: {str(e)}"}), 500
 
 @app.route('/get_document/<id>', methods=['GET'])
 def get_document(id):
@@ -138,6 +151,20 @@ def delete_document(id):
         return jsonify({"error": "Erreur lors de la suppression du document"}), 500
 
 # Routes pour les emprunts
+@app.route('/emprunts')
+def get_emprunts():
+    emprunts = mongo.db.emprunts.find()
+    emprunts_list = [
+        {
+            "id": str(emprunt["_id"]),
+            "abonne_id": emprunt["abonne_id"],
+            "document_id": emprunt["document_id"],
+            "date_emprunt": emprunt["date_emprunt"],
+            "date_retour": emprunt["date_retour"]
+        } for emprunt in emprunts
+    ]
+    return render_template('emprunt_list.html', emprunts=emprunts_list)
+
 @app.route('/add_emprunt', methods=['POST'])
 def add_emprunt():
     data = request.json

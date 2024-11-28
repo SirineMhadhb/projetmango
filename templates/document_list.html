@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Médiathèque</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css">
     <style>
         /* Style général */
         body {
@@ -72,24 +73,10 @@
             </ul>
         </nav>
     </header>
-</body>
-</html>
-
-
-
-
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Liste des documents</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-</head>
-<body>
     <div class="container mt-5">
         <h2>Liste des documents</h2>
-        <table class="table table-bordered">
+        <button class="btn btn-success" onclick="openAddDocumentModal()">Ajouter un document</button>
+        <table class="table table-bordered mt-3">
             <thead>
                 <tr>
                     <th>Titre</th>
@@ -100,7 +87,7 @@
                     <th>Actions</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="documentsList">
                 {% for doc in documents %}
                 <tr>
                     <td>{{ doc.titre }}</td>
@@ -112,27 +99,121 @@
                         <button class="btn btn-info" onclick="viewDocument('{{ doc.id }}')">Voir</button>
                         <button class="btn btn-warning" onclick="editDocument('{{ doc.id }}')">Modifier</button>
                         <button class="btn btn-danger" onclick="deleteDocument('{{ doc.id }}')">Supprimer</button>
-
                     </td>
                 </tr>
-
-                
                 {% endfor %}
             </tbody>
         </table>
     </div>
 
+    <!-- Modal pour Ajouter un Document -->
+    <div class="modal" id="addDocumentModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Ajouter un document</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="documentForm">
+                        <div class="form-group">
+                            <label for="titre">Titre</label>
+                            <input type="text" class="form-control" id="titre" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="auteur">Auteur</label>
+                            <input type="text" class="form-control" id="auteur" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="genre">Genre</label>
+                            <input type="text" class="form-control" id="genre" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="date_publication">Date de publication</label>
+                            <input type="date" class="form-control" id="date_publication" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="disponibilite">Disponibilité</label>
+                            <input type="text" class="form-control" id="disponibilite" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Enregistrer</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
-        // Fonction pour voir un document
+        // Charger la liste des documents
+        function loadDocuments() {
+            $.get('/documents', function(response) {
+                const documents = response.documents;
+                const documentRows = documents.map(doc => `
+                    <tr>
+                        <td>${doc.titre}</td>
+                        <td>${doc.auteur}</td>
+                        <td>${doc.genre}</td>
+                        <td>${doc.date_publication}</td>
+                        <td>${doc.disponibilite}</td>
+                        <td>
+                            <button class="btn btn-info" onclick="viewDocument('${doc.id}')">Voir</button>
+                            <button class="btn btn-warning" onclick="editDocument('${doc.id}')">Modifier</button>
+                            <button class="btn btn-danger" onclick="deleteDocument('${doc.id}')">Supprimer</button>
+                        </td>
+                    </tr>
+                `);
+                $('#documentsList').html(documentRows.join(''));
+            });
+        }
+
+        // Ouvrir le modal pour ajouter un document
+        function openAddDocumentModal() {
+            $('#documentForm')[0].reset(); // Réinitialiser le formulaire
+            $('#documentForm').off('submit').on('submit', function(e) {
+                e.preventDefault();
+                addDocument();
+            });
+            $('#addDocumentModal').modal('show');
+        }
+
+        // Ajouter un document
+        function addDocument() {
+            const data = {
+                titre: $('#titre').val(),
+                auteur: $('#auteur').val(),
+                genre: $('#genre').val(),
+                date_publication: $('#date_publication').val(),
+                disponibilite: $('#disponibilite').val()
+            };
+
+            $.ajax({
+                url: '/ajouter_document',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({document: data}),
+                success: function(response) {
+                    alert(response.message);
+                    loadDocuments(); // Recharger les documents après l'ajout
+                    $('#addDocumentModal').modal('hide');
+                },
+                error: function(xhr, status, error) {
+                    alert('Erreur: ' + error);
+                }
+            });
+        }
+
+        // Voir un document
         function viewDocument(id) {
             $.get(`/get_document/${id}`, function(response) {
                 alert(`Titre: ${response.titre}, Auteur: ${response.auteur}, Genre: ${response.genre}`);
             });
         }
 
-        // Fonction pour modifier un document
+        // Modifier un document
         function editDocument(id) {
             $.get(`/get_document/${id}`, function(response) {
                 $('#titre').val(response.titre);
@@ -140,39 +221,61 @@
                 $('#genre').val(response.genre);
                 $('#date_publication').val(response.date_publication);
                 $('#disponibilite').val(response.disponibilite);
+                $('#documentForm').off('submit').on('submit', function(e) {
+                    e.preventDefault();
+                    updateDocument(id);
+                });
                 $('#addDocumentModal').modal('show');
             });
         }
 
-        // Fonction pour supprimer un document
+        // Mettre à jour un document
+        function updateDocument(id) {
+            const data = {
+                titre: $('#titre').val(),
+                auteur: $('#auteur').val(),
+                genre: $('#genre').val(),
+                date_publication: $('#date_publication').val(),
+                disponibilite: $('#disponibilite').val()
+            };
+
+            $.ajax({
+                url: `/update_document/${id}`,
+                type: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function(response) {
+                    alert(response.message);
+                    loadDocuments();
+                    $('#addDocumentModal').modal('hide');
+                },
+                error: function(xhr, status, error) {
+                    alert('Erreur: ' + error);
+                }
+            });
+        }
+
+        // Supprimer un document
         function deleteDocument(id) {
-            if (confirm('Êtes-vous sûr de vouloir supprimer ce document?')) {
+            if (confirm("Êtes-vous sûr de vouloir supprimer ce document ?")) {
                 $.ajax({
                     url: `/delete_document/${id}`,
                     type: 'DELETE',
                     success: function(response) {
                         alert(response.message);
-                        location.reload(); 
+                        loadDocuments();
                     },
                     error: function(xhr, status, error) {
-                        alert('Erreur lors de la suppression du document');
+                        alert('Erreur: ' + error);
                     }
                 });
             }
         }
+
+        // Initialisation
+        $(document).ready(function() {
+            loadDocuments();
+        });
     </script>
 </body>
 </html>
-
-
-    <!-- JavaScript Files -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="{{ url_for('static', filename='js/Script.js') }}"></script>
-
-</body>
-</html>
-
-
-    
-  

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajouter un document</title>
+</head>
+<body>
+    <h1>Ajouter un document</h1>
+    <form>
+        <label for="titre">Titre :</label>
+        <input type="text" id="titre" name="titre" required><br><br>
+
+        <label for="auteur">Auteur :</label>
+        <input type="text" id="auteur" name="auteur" required><br><br>
+
+        <label for="genre">Genre :</label>
+        <input type="text" id="genre" name="genre" required><br><br>
+
+        <label for="date_publication">Date de publication :</label>
+        <input type="date" id="date_publication" name="date_publication" required><br><br>
+
+        <label for="disponibilite">Disponibilité :</label>
+        <select id="disponibilite" name="disponibilite" required>
+            <option value="Disponible">Disponible</option>
+            <option value="Indisponible">Indisponible</option>
+        </select><br><br>
+
+        <button type="submit">Ajouter</button>
+    </form>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const form = document.querySelector("form");
+
+            form.addEventListener("submit", async (event) => {
+                event.preventDefault();
+
+                const formData = new FormData(form);
+                const data = {
+                    titre: formData.get("titre"),
+                    auteur: formData.get("auteur"),
+                    genre: formData.get("genre"),
+                    date_publication: formData.get("date_publication"),
+                    disponibilite: formData.get("disponibilite"),
+                };
+
+                try {
+                    const response = await fetch("/add_abonne", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(data),
+                    });
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        alert(result.message || "Document ajouté avec succès !");
+                        window.location.href = "/"; // Redirection après ajout
+                    } else {
+                        const error = await response.json();
+                        alert(error.error || "Erreur lors de l'ajout du document.");
+                    }
+                } catch (error) {
+                    console.error("Erreur:", error);
+                    alert("Une erreur s'est produite. Veuillez réessayer.");
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -107,4 +107,28 @@ $(document).ready(function() {
             });
         }
     };
+
+    window.editAbonne = function(id) {
+        $.get(`/get_abonne/${id}`, function(response) {
+            if (response.error) {
+                alert(response.error);
+            } else {
+                // Pré-remplit le formulaire avec les données de l'abonné
+                $('#nom').val(response.nom);
+                $('#prenom').val(response.prenom);
+                $('#adresse').val(response.adresse);
+                $('#date_inscription').val(response.date_inscription);
+                
+                // Met à jour l'action du formulaire pour la modification
+                $('#abonneForm').off('submit').on('submit', function(e) {
+                    e.preventDefault();
+                    updateAbonne(id);
+                });
+    
+                // Affiche la modale
+                $('#addAbonneModal').modal('show');
+            }
+        });
+    };
+    
 });

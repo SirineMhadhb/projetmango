@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de Bord</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Taille des graphiques */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 300px; /* Hauteur des graphiques ajustée */
+            margin-bottom: 20px;
+        }
+        
+        /* Design des cartes d'information */
+        .card-body h3 {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .card-header {
+            font-size: 1.2rem;
+            background-color: #3b434d;
+            color: white;
+            text-align: center;
+            padding: 10px;
+        }
+
+        /* Espacement entre les cartes */
+        .card {
+            margin-bottom: 15px;
+            border-radius: 8px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Espacement et centrage du contenu principal */
+        .container {
+            margin-top: 20px;
+        }
+
+        /* Amélioration des boutons */
+        .btn-danger {
+            border-radius: 5px;
+            background-color: #dc3545;
+        }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+
+        /* Espacement des graphiques sur les petits écrans */
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 250px; /* Réduction de la hauteur des graphiques sur les petits écrans */
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <a class="navbar-brand" href="/index">Bibliothèque</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item"><a class="nav-link" href="/abonnes">Abonnés</a></li>
+                <li class="nav-item"><a class="nav-link" href="/documents">Documents</a></li>
+                <li class="nav-item"><a class="nav-link" href="/emprunts">Emprunts</a></li>
+                <li class="nav-item"><a class="nav-link" href="/genres">Genre</a></li>
+                <li class="nav-item"><a class="nav-link" href="/dashboard">Tableau de Bord</a></li>
+                <li class="nav-item">
+                    <form action="/logout" method="POST" style="display: inline;">
+                        <button class="btn btn-danger btn-sm nav-link text-white" style="border: none;">
+                            <i class="fas fa-sign-out-alt"></i> <!-- Icône pour déconnexion -->
+                        </button>
+                    </form>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Contenu principal -->
+    <div class="container">
+        <h2 class="text-center mb-4">Tableau de Bord</h2>
+        <div class="row">
+            <!-- Statistiques -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">Nombre d'Abonnés</div>
+                    <div class="card-body">
+                        <h3 class="text-center">{{ total_abonnes }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">Nombre de Documents</div>
+                    <div class="card-body">
+                        <h3 class="text-center">{{ total_documents }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">Nombre de genres</div>
+                    <div class="card-body">
+                        <h3 class="text-center">{{ total_genres}}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Graphiques -->
+        <div class="row mt-5">
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <h4 class="text-center">Disponibilité des Documents</h4> <!-- Titre du graphique 1 -->
+                    <canvas id="empruntsChart"></canvas>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <h4 class="text-center">Statistiques Abonnés et Documents</h4> <!-- Titre du graphique 2 -->
+                    <canvas id="abonneDocumentsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts JS de Bootstrap -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.0.5/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <!-- Script pour initialiser les graphiques -->
+    <script>
+        // Injection des variables depuis Django dans le JavaScript avec JSON
+        var documentsDisponibles = JSON.parse(document.getElementById('documentsDisponibles').textContent);
+        var documentsNonDisponibles = JSON.parse(document.getElementById('documentsNonDisponibles').textContent);
+        var totalAbonnes = JSON.parse(document.getElementById('totalAbonnes').textContent);
+        var totalDocuments = JSON.parse(document.getElementById('totalDocuments').textContent);
+
+        // Initialisation du graphique 1 pour la disponibilité des documents
+        var ctx1 = document.getElementById('empruntsChart').getContext('2d');
+        var empruntsChart = new Chart(ctx1, {
+            type: 'pie',
+            data: {
+                labels: ['Documents Disponibles', 'Documents Non Disponibles'],
+                datasets: [{
+                    label: 'Disponibilité des Documents',
+                    data: [documentsDisponibles, documentsNonDisponibles],
+                    backgroundColor: ['rgba(75, 192, 192, 0.6)', 'rgba(153, 102, 255, 0.6)'],
+                    borderColor: ['rgba(75, 192, 192, 1)', 'rgba(153, 102, 255, 1)'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true
+            }
+        });
+
+        // Initialisation du graphique 2 pour les statistiques abonnés et documents
+        var ctx2 = document.getElementById('abonneDocumentsChart').getContext('2d');
+        var abonneDocumentsChart = new Chart(ctx2, {
+            type: 'bar',
+            data: {
+                labels: ['Abonnés', 'Documents'],
+                datasets: [{
+                    label: 'Statistiques',
+                    data: [totalAbonnes, totalDocuments],
+                    backgroundColor: ['rgba(75, 192, 192, 0.6)', 'rgba(153, 102, 255, 0.6)'],
+                    borderColor: ['rgba(75, 192, 192, 1)', 'rgba(153, 102, 255, 1)'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                indexAxis: 'y',
+                scales: {
+                    x: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                }
+            }
+        });
+    </script>
+
+    <!-- Ajout des éléments JSON pour l'injection dans le script -->
+    <script id="documentsDisponibles" type="application/json">{{ documents_disponibles|default(0)|json_script }}</script>
+    <script id="documentsNonDisponibles" type="application/json">{{ documents_non_disponibles|default(0)|json_script }}</script>
+    <script id="totalAbonnes" type="application/json">{{ total_abonnes|default(0)|json_script }}</script>
+    <script id="totalDocuments" type="application/json">{{ total_documents|default(0)|json_script }}</script>
+</body>
+</html>

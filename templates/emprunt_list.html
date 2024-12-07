@@ -3,169 +3,260 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion des Emprunts</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <title>Liste des Emprunts</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-        }
-
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
         }
-
-        table, th, td {
-            border: 1px solid #ddd;
-        }
-
         th, td {
+            border: 1px solid #ddd;
             padding: 8px;
+        }
+        th {
+            background-color: #f4f4f4;
             text-align: left;
         }
-
-        .button {
-            background-color: #4CAF50;
-            color: white;
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .btn {
             padding: 10px 20px;
-            border: none;
             cursor: pointer;
+            font-size: 14px;
+            display: inline-block;
+            margin: 5px;
+        }
+        .btn-add { background-color: green; color: white; }
+        .btn-update { background-color: orange; color: white; }
+        .btn-view { background-color: blue; color: white; }
+        .btn-delete { background-color: red; color: white; }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            color: #333;
         }
 
-        .button:hover {
-            background-color: #45a049;
-        }
-
-        .edit-button, .delete-button {
-            color: white;
-            padding: 5px 10px;
-            cursor: pointer;
-        }
-
-        .edit-button {
-            background-color: #ffa500;
-        }
-
-        .edit-button:hover {
-            background-color: #e68900;
-        }
-
-        .delete-button {
-            background-color: #ff0000;
-        }
-
-        .delete-button:hover {
-            background-color: #e60000;
-        }
-
-        /* Styles pour la fenêtre modale */
-        .modal {
-            display: none; /* Par défaut, la modal est cachée */
-            position: fixed;
-            z-index: 1;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0, 0, 0, 0.4); /* Fond sombre */
-        }
-
-        .modal-content {
-            background-color: white;
-            margin: 15% auto;
+        /* En-tête */
+        header {
+            text-align: center;
             padding: 20px;
-            border: 1px solid #888;
-            width: 80%;
-            max-width: 500px;
+            background-color: #4CAF50; /* Couleur principale */
+            color: white;
         }
 
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
+        /* Barre de navigation */
+        .navbar {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            background-color: #333; /* Couleur de fond */
         }
 
-        .close:hover,
-        .close:focus {
-            color: black;
+        .navbar li {
+            margin: 0 15px;
+        }
+
+        .navbar a {
             text-decoration: none;
-            cursor: pointer;
+            color: white; /* Couleur du texte */
+            padding: 10px 20px;
+            border-radius: 5px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Effets au survol */
+        .navbar a:hover {
+            background-color: #4CAF50; /* Fond au survol */
+            color: white; /* Texte au survol */
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 600px) {
+            .navbar {
+                flex-direction: column; /* Empile les liens */
+            }
+            .navbar li {
+                margin: 10px 0;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>Gestion des Emprunts</h1>
+    <header>
+        <h1>Bienvenue à la Médiathèque</h1>
+        <nav>
+            <ul class="navbar">
+                <li><a href="/abonne">Abonnés</a></li>
+                <li><a href="/documents">Documents</a></li>
+                <li><a href="/emprunts">Emprunts</a></li>
+            </ul>
+        </nav>
+    </header>
 
-    <!-- Table des emprunts -->
-    <table id="emprunts-table">
+    <h1>Liste des Emprunts</h1>
+    <table class="table table-bordered">
         <thead>
             <tr>
-                <th>ID</th>
-                <th>Abonné</th>
-                <th>Document</th>
-                <th>Date d'emprunt</th>
-                <th>Date de retour</th>
+                <th>Nom de l'Abonné</th>
+                <th>Titre du Document</th>
+                <th>Date d'Emprunt</th>
+                <th>Date de Retour</th>
                 <th>Actions</th>
             </tr>
         </thead>
-        <tbody>
-            <!-- Les lignes des emprunts seront ajoutées ici dynamiquement -->
+        <tbody id="emprunts-table">
+            {% for emprunt in emprunts %}
+            <tr>
+                <td>{{ emprunt.abonne_nom }}</td>
+                <td>{{ emprunt.document_titre }}</td>
+                <td>{{ emprunt.date_emprunt }}</td>
+                <td>{{ emprunt.date_retour }}</td>
+                <td class="action-buttons">
+                    <button class="btn btn-view" onclick="viewEmprunt('{{ emprunt.id }}')">Consulter</button>
+                    <button class="btn btn-update" onclick="updateEmprunt('{{ emprunt.id }}')">Mettre à jour</button>
+                    <button class="btn btn-delete" onclick="deleteEmprunt('{{ emprunt.id }}')">Supprimer</button>
+                </td>
+            </tr>
+            {% endfor %}
         </tbody>
     </table>
 
-    <!-- Formulaire pour ajouter un emprunt (popup) -->
-    <div id="addEmpruntModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal('addEmpruntModal')">&times;</span>
-            <h3>Ajouter un Emprunt</h3>
-            <form id="add-emprunt-form">
-                <label for="abonne_id">ID Abonné:</label>
-                <input type="text" id="abonne_id" name="abonne_id" required><br><br>
+    <button class="btn btn-add" onclick="openAddEmpruntModal()">Ajouter un Emprunt</button>
 
-                <label for="document_id">ID Document:</label>
-                <input type="text" id="document_id" name="document_id" required><br><br>
-
-                <label for="date_emprunt">Date d'Emprunt:</label>
-                <input type="date" id="date_emprunt" name="date_emprunt" required><br><br>
-
-                <label for="date_retour">Date de Retour:</label>
-                <input type="date" id="date_retour" name="date_retour" required><br><br>
-
-                <button type="submit" class="button">Ajouter un Emprunt</button>
-            </form>
+    <!-- Modal pour Ajouter ou Modifier un Emprunt -->
+    <div class="modal" id="empruntModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">Ajouter un Emprunt</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="closeModal()">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="empruntForm">
+                        <div class="form-group">
+                            <label for="abonne_id">Nom de l'Abonné</label>
+                            <select class="form-control" id="abonne_id" required>
+                                <option value="">Sélectionnez un Abonné</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="document_id">Titre du Document</label>
+                            <select class="form-control" id="document_id" required>
+                                <option value="">Sélectionnez un Document</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="date_emprunt">Date d'Emprunt</label>
+                            <input type="date" class="form-control" id="date_emprunt" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="date_retour">Date de Retour</label>
+                            <input type="date" class="form-control" id="date_retour" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Enregistrer</button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Formulaire pour modifier un emprunt (popup) -->
-    <div id="editEmpruntModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal('editEmpruntModal')">&times;</span>
-            <h3>Modifier un Emprunt</h3>
-            <form id="edit-emprunt-form">
-                <input type="hidden" id="edit-emprunt-id">
-                <label for="edit-abonne_id">ID Abonné:</label>
-                <input type="text" id="edit-abonne_id" name="abonne_id" required><br><br>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        // Ouvrir le modal d'ajout
+        function openAddEmpruntModal() {
+            $('#empruntForm')[0].reset();
+            $('#modalTitle').text("Ajouter un Emprunt");
 
-                <label for="edit-document_id">ID Document:</label>
-                <input type="text" id="edit-document_id" name="document_id" required><br><br>
+            // Charger les abonnés
+            $.get('/getabonne', function(response) {
+                const abonneSelect = $('#abonne_id');
+                abonneSelect.empty();
+                abonneSelect.append('<option value="">Sélectionnez un Abonné</option>');
+                response.abonnes.forEach(function(abonne) {
+                    abonneSelect.append('<option value="' + abonne.id + '">' + abonne.nom + '</option>');
+                });
+            });
 
-                <label for="edit-date_emprunt">Date d'Emprunt:</label>
-                <input type="date" id="edit-date_emprunt" name="date_emprunt" required><br><br>
+            // Charger les documents disponibles
+            $.get('/get_documents_disponibles', function(response) {
+                const documentSelect = $('#document_id');
+                documentSelect.empty();
+                documentSelect.append('<option value="">Sélectionnez un Document</option>');
+                response.documents.forEach(function(document) {
+                    documentSelect.append('<option value="' + document.id + '">' + document.titre + '</option>');
+                });
+            });
 
-                <label for="edit-date_retour">Date de Retour:</label>
-                <input type="date" id="edit-date_retour" name="date_retour" required><br><br>
+            $('#empruntForm').off('submit').on('submit', function(e) {
+                e.preventDefault();
+                addEmprunt();
+            });
 
-                <button type="submit" class="button">Mettre à jour l'Emprunt</button>
-            </form>
-        </div>
-    </div>
+            $('#empruntModal').modal('show');
+        }
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="{{ url_for('static', filename='js/Script2.js') }}"></script>
+        // Ajouter un emprunt
+        function addEmprunt() {
+            const data = {
+                abonne_id: $('#abonne_id').val(),
+                document_id: $('#document_id').val(),
+                date_emprunt: $('#date_emprunt').val(),
+                date_retour: $('#date_retour').val()
+            };
 
+            $.ajax({
+                url: '/ajouter_emprunt',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ emprunt: data }),
+                success: function(response) {
+                    alert(response.message);
+                    location.reload();
+                },
+                error: function(xhr, status, error) {
+                    alert('Erreur: ' + error);
+                }
+            });
+        }
+
+        function updateEmprunt(empruntId) {
+    const data = {
+        abonne_id: $('#abonne_id').val(),
+        document_id: $('#document_id').val(),
+        date_emprunt: $('#date_emprunt').val(),
+        date_retour: $('#date_retour').val(),
+    };
+
+    $.ajax({
+        url: '/update_emprunt/' + empruntId,
+        type: 'PUT',
+        contentType: 'application/json',
+        data: JSON.stringify(data),
+        success: function(response) {
+            alert(response.message);
+            location.reload();
+        },
+        error: function(xhr, status, error) {
+            alert('Erreur: ' + error);
+        }
+    });
+}
+
+        // Fermer le modal
+        function closeModal() {
+            $('#empruntModal').modal('hide');
+        }
+    </script>
 </body>
 </html>

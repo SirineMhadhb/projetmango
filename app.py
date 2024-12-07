@@ -1,10 +1,18 @@
 from flask import Flask, render_template, request, jsonify
 from flask_pymongo import PyMongo
 from bson import ObjectId
+from datetime import datetime
+from flask import request, redirect, url_for, flash
 
 app = Flask(__name__)
 app.config['MONGO_URI'] = "mongodb://localhost:27017/mediatheque"
+app.secret_key = 'votre_cle_secrète'
 mongo = PyMongo(app)
+
+
+
+
+
 
 # Route d'accueil
 @app.route('/')
@@ -19,9 +27,31 @@ def index():
             "disponibilite": doc["disponibilite"]
         } for doc in documents
     ]
-    return render_template('abonne_list.html', documents=documents_list)
+    return render_template('login.html', documents=documents_list)
 
-# Routes pour les abonnés
+@app.route('/dashboard')
+def dashboard():
+    emprunts = get_emprunts(mongo)  # Utilisez la fonction définie
+    total_emprunts = len(emprunts)
+    total_abonnes = mongo.db.abonnes.count_documents({})
+    total_documents = mongo.db.documents.count_documents({})
+    total_genres = mongo.db.genres.count_documents({})
+
+    # Calcul de la disponibilité des documents
+    documents_disponibles = mongo.db.documents.count_documents({'disponibilite': 'Disponible'})
+    documents_non_disponibles = mongo.db.documents.count_documents({'disponibilite': 'Indisponible'})
+   
+    # Passer les données au template
+    return render_template('dashboard.html', 
+                           emprunts=emprunts,
+                           total_emprunts=total_emprunts,
+                           total_abonnes=total_abonnes,
+                           total_documents=total_documents,
+                           total_genres=total_genres,
+                           documents_disponibles=documents_disponibles,
+                           documents_non_disponibles=documents_non_disponibles,
+                          )
+
 @app.route('/abonne')
 def get_abonnes():
     abonnés = mongo.db.abonnes.find()
@@ -36,6 +66,21 @@ def get_abonnes():
     ]
     return render_template('abonne_list.html', abonnés=abonnes_list)
 
+
+@app.route('/getabonne')
+def get_abonness():
+    abonnés = mongo.db.abonnes.find()
+    abonnes_list = [
+        {
+            "id": str(abonne["_id"]),  
+            "nom": abonne["nom"],
+            "prenom": abonne["prenom"],
+            "adresse": abonne["adresse"],
+            "date_inscription": abonne["date_inscription"]
+        } for abonne in abonnés
+    ]
+    return jsonify({"abonnes": abonnes_list})
+
 @app.route('/add_abonne', methods=['POST'])
 def add_abonne():
     data = request.json
@@ -48,16 +93,20 @@ def add_abonne():
 
 @app.route('/get_abonne/<id>', methods=['GET'])
 def get_abonne(id):
+    # Validate if the id is a valid ObjectId
+    if not ObjectId.is_valid(id):
+        return jsonify({"error": "ID invalide"}), 400
+    
     try:
         abonne_id = ObjectId(id)
         abonne = mongo.db.abonnes.find_one({"_id": abonne_id})
         if abonne:
-            abonne["_id"] = str(abonne["_id"])  # Convertir l'ObjectId en chaîne avant de le retourner
+            abonne["_id"] = str(abonne["_id"])  # Convertir ObjectId en chaîne
             return jsonify(abonne), 200
         else:
             return jsonify({"error": "Abonné non trouvé"}), 404
     except Exception as e:
-        return jsonify({"error": "Erreur lors de la récupération de l'abonné"}), 500
+        return jsonify({"error": f"Erreur: {str(e)}"}), 500
 
 @app.route('/update_abonne/<id>', methods=['PUT'])
 def update_abonne(id):
@@ -140,79 +189,141 @@ def update_document(id):
         return jsonify({"message": "Document mis à jour avec succès!"})
     except Exception as e:
         return jsonify({"error": "Erreur lors de la mise à jour du document"}), 500
+    
 
-@app.route('/delete_document/<id>', methods=['DELETE'])
-def delete_document(id):
-    try:
-        document_id = ObjectId(id)
-        mongo.db.documents.delete_one({"_id": document_id})
-        return jsonify({"message": "Document supprimé avec succès!"})
-    except Exception as e:
-        return jsonify({"error": "Erreur lors de la suppression du document"}), 500
 
-# Routes pour les emprunts
+
+@app.route('/get_documents_disponibles')
+def get_documents_disponibles():
+    documents = mongo.db.documents.find({"disponibilite": "oui"})  
+    documents_list = [
+        {
+            "id": str(doc["_id"]),
+            "titre": doc["titre"],
+            "auteur": doc["auteur"],
+            "genre": doc["genre"],
+            "date_publication": doc["date_publication"],
+            "disponibilite": doc["disponibilite"]
+        } for doc in documents
+    ]
+    return jsonify({"documents": documents_list})
+
+# # Route pour récupérer tous les emprunts
+# @app.route('/emprunts', methods=['GET'])
+# def get_emprunts():
+#     emprunts = mongo.db.emprunts.find()
+#     emprunts_list = [
+#         {
+#             "id": str(emprunt["_id"]),
+#             "abonne_id": emprunt["abonne_id"],
+#             "document_id": emprunt["document_id"],
+#             "date_emprunt": emprunt["date_emprunt"],
+#             "date_retour": emprunt["date_retour"]
+#         } for emprunt in emprunts
+#     ]
+#     return render_template('emprunt_list.html', emprunts=emprunts_list), 200
+
+# Route pour ajouter un emprunt
+from bson import ObjectId  # Assurez-vous d'importer ObjectId de bson
+
 @app.route('/emprunts')
 def get_emprunts():
     emprunts = mongo.db.emprunts.find()
-    emprunts_list = [
-        {
-            "id": str(emprunt["_id"]),
-            "abonne_id": emprunt["abonne_id"],
-            "document_id": emprunt["document_id"],
-            "date_emprunt": emprunt["date_emprunt"],
-            "date_retour": emprunt["date_retour"]
-        } for emprunt in emprunts
-    ]
-    return render_template('emprunt_list.html', emprunts=emprunts_list)
+    emprunt_list = []
 
-@app.route('/add_emprunt', methods=['POST'])
-def add_emprunt():
-    data = request.json
-    abonne_id = data.get('abonne_id')
-    document_id = data.get('document_id')
-    date_emprunt = data.get('date_emprunt')
-    date_retour = data.get('date_retour')
+    for emprunt in emprunts:
+        abonne_id = emprunt.get("abonne_id")
+        document_id = emprunt.get("document_id")
 
-    if not all([abonne_id, document_id, date_emprunt, date_retour]):
-        return jsonify({"error": "Missing required fields"}), 400
-    
-    emprunt_data = {
-        "abonne_id": abonne_id,
-        "document_id": document_id,
-        "date_emprunt": date_emprunt,
-        "date_retour": date_retour
-    }
-    mongo.db.emprunts.insert_one(emprunt_data)
-    return jsonify({"message": "Emprunt ajouté avec succès!"}), 201
-
-@app.route('/get_emprunt/<emprunt_id>', methods=['GET'])
-def get_emprunt(emprunt_id):
-    try:
-        emprunt = mongo.db.emprunts.find_one({"_id": ObjectId(emprunt_id)})
-        if emprunt:
-            emprunt["_id"] = str(emprunt["_id"])
-            return jsonify(emprunt), 200
+        # Check if abonne_id is valid
+        if ObjectId.is_valid(abonne_id):
+            abonne = mongo.db.abonnes.find_one({"_id": ObjectId(abonne_id)})
         else:
-            return jsonify({"error": "Emprunt non trouvé"}), 404
-    except Exception:
-        return jsonify({"error": "Erreur lors de la récupération de l'emprunt"}), 500
+            abonne = None  # Handle invalid abonne_id case
 
-@app.route('/update_emprunt/<emprunt_id>', methods=['PUT'])
-def update_emprunt(emprunt_id):
+        # Check if document_id is valid
+        if ObjectId.is_valid(document_id):
+            document = mongo.db.documents.find_one({"_id": ObjectId(document_id)})
+        else:
+            document = None  # Handle invalid document_id case
+
+        # Append emprunt to the list
+        emprunt_list.append({
+            "id": str(emprunt["_id"]),
+            "abonne_nom": f"{abonne['nom']} {abonne['prenom']}" if abonne else "Abonné introuvable",
+            "document_titre": document["titre"] if document else "Document introuvable",
+            "date_emprunt": emprunt["date_emprunt"],
+            "date_retour": emprunt["date_retour"],
+        })
+    
+    return render_template('emprunt_list.html', emprunts=emprunt_list)
+
+
+@app.route('/get_emprunt/<id>', methods=['GET'])
+def get_emprunt(id):
+    emprunt = mongo.db.emprunts.find_one({"_id": ObjectId(id)})
+    if emprunt:
+        abonne_id = emprunt.get("abonne_id")
+        document_id = emprunt.get("document_id")
+
+        abonne_nom = "Inconnu"
+        if abonne_id:
+            abonne = mongo.db.abonnes.find_one({"_id": ObjectId(abonne_id)})
+            if abonne:
+                abonne_nom = abonne.get("nom", "Inconnu")
+
+        document_titre = "Inconnu"
+        if document_id:
+            document = mongo.db.documents.find_one({"_id": ObjectId(document_id)})
+            if document:
+                document_titre = document.get("titre", "Inconnu")
+
+        return jsonify({
+            "id": str(emprunt["_id"]),
+            "abonne_nom": abonne_nom,
+            "document_titre": document_titre,
+            "date_emprunt": emprunt.get("date_emprunt"),
+            "date_retour": emprunt.get("date_retour")
+        }), 200
+    else:
+        return jsonify({"error": "Emprunt non trouvé"}), 404
+
+# Route pour mettre à jour un emprunt
+@app.route('/update_emprunt/<id>', methods=['PUT'])
+def update_emprunt(id):
+    data = request.json
     try:
-        data = request.json
-        mongo.db.emprunts.update_one({"_id": ObjectId(emprunt_id)}, {"$set": data})
-        return jsonify({"message": "Emprunt mis à jour avec succès!"}), 200
-    except Exception:
+        emprunt_id = ObjectId(id)
+        mongo.db.emprunts.update_one({"_id": emprunt_id}, {"$set": data})
+        return jsonify({"message": "Emprunt mis à jour avec succès!"})
+    except Exception as e:
         return jsonify({"error": "Erreur lors de la mise à jour de l'emprunt"}), 500
 
-@app.route('/delete_emprunt/<emprunt_id>', methods=['DELETE'])
-def delete_emprunt(emprunt_id):
+
+# Route pour ajouter un emprunt
+from bson import ObjectId
+@app.route('/ajouter_emprunt', methods=['POST'])
+def add_emprunt():
+    data = request.json['emprunt']
+    
+    # Ensure valid ObjectId
+    if not ObjectId.is_valid(data.get("abonne_id", "")) or not ObjectId.is_valid(data.get("document_id", "")):
+        return jsonify({"error": "ID invalide pour l'abonné ou le document"}), 400
+
     try:
-        mongo.db.emprunts.delete_one({"_id": ObjectId(emprunt_id)})
+        mongo.db.emprunts.insert_one(data)
+        return jsonify({"message": "Emprunt ajouté avec succès!"}), 201
+    except Exception as e:
+        return jsonify({"error": f"Erreur : {str(e)}"}), 500
+
+# Route pour supprimer un emprunt
+@app.route('/delete_emprunt/<id>', methods=['DELETE'])
+def delete_emprunt(id):
+    try:
+        mongo.db.emprunts.delete_one({"_id": ObjectId(id)})
         return jsonify({"message": "Emprunt supprimé avec succès!"}), 200
-    except Exception:
-        return jsonify({"error": "Erreur lors de la suppression de l'emprunt"}), 500
+    except Exception as e:
+        return jsonify({"error": f"Erreur lors de la suppression de l'emprunt: {str(e)}"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

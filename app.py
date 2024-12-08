@@ -96,17 +96,19 @@ def get_abonne(id):
     # Validate if the id is a valid ObjectId
     if not ObjectId.is_valid(id):
         return jsonify({"error": "ID invalide"}), 400
-
+    
     try:
         abonne_id = ObjectId(id)
         abonne = mongo.db.abonnes.find_one({"_id": abonne_id})
         if abonne:
-            abonne["_id"] = str(abonne["_id"])  # Convert ObjectId to string
+            abonne["_id"] = str(abonne["_id"])  # Convertir ObjectId en chaîne
             return jsonify(abonne), 200
         else:
             return jsonify({"error": "Abonné non trouvé"}), 404
     except Exception as e:
-        return jsonify({"error": f"Une erreur est survenue: {str(e)}"}), 500
+        return jsonify({"error": f"Erreur: {str(e)}"}), 500
+    
+
 @app.route('/update_abonne/<id>', methods=['PUT'])
 def update_abonne(id):
     data = request.json

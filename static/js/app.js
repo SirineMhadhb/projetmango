@@ -46,35 +46,31 @@ $(document).ready(function() {
 
   // Edit an Abonné
   window.editAbonne = function (id) {
-    console.log("Appel de editAbonne avec ID:", id);
+    console.log("Chargement des données pour l'abonné ID:", id);
 
-    $.get(`/get_abonne/${id}`)
-        .done(function (response) {
-            console.log("Réponse de l'API :", response);
-            if (response.error) {
-                alert(response.error);
-            } else {
-                console.log("Données de l'abonné récupérées :", response);
+    $.get(`/get_abonne/${id}`, function (response) {
+        console.log("Réponse du serveur :", response);
 
-                $('#nom').val(response.nom);
-                $('#prenom').val(response.prenom);
-                $('#adresse').val(response.adresse);
-                $('#date_inscription').val(response.date_inscription);
+        if (response.error) {
+            alert(response.error);
+        } else {
+            // Remplir les champs du formulaire avec les données reçues
+            $('#abonneId').val(response.id); // Stocker l'ID dans un champ caché
+            $('#nom').val(response.nom);
+            $('#prenom').val(response.prenom);
+            $('#adresse').val(response.adresse);
+            $('#date_inscription').val(response.date_inscription);
 
-                // Update the form action to edit
-                $('#abonneForm').off('submit').on('submit', function (e) {
-                    e.preventDefault();
-                    updateAbonne(id);
-                });
-
-                $('#addAbonneModal').modal('show');
-            }
-        })
-        .fail(function (jqXHR, textStatus, errorThrown) {
-            console.error("Erreur AJAX :", textStatus, errorThrown);
-            alert("Une erreur s'est produite lors de la récupération des données de l'abonné.");
-        });
+            // Afficher la modale
+            $('#ModifierAbonneModal').modal('show');
+        }
+    }).fail(function (jqXHR, textStatus, errorThrown) {
+        console.error("Erreur AJAX :", textStatus, errorThrown);
+        alert("Erreur lors de la récupération des données.");
+    });
 };
+
+
 
 
     // Update an Abonné
@@ -131,7 +127,7 @@ $(document).ready(function() {
                 $('#adresse').val(response.adresse);
                 $('#date_inscription').val(response.date_inscription);
     
-                $('#addAbonneModal').modal('show'); // Afficher la modale
+                $('#ModifierAbonneModal').modal('show'); // Afficher la modale
             }
         });
     };

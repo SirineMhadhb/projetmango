@@ -132,79 +132,88 @@
     <button class="btn btn-add" onclick="openAddEmpruntModal()">Ajouter un Emprunt</button>
 
     <!-- Modal pour Ajouter ou Modifier un Emprunt -->
-    <div class="modal" id="empruntModal" tabindex="-1" role="dialog">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalTitle">Ajouter un Emprunt</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="closeModal()">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <form id="empruntForm">
-                        <div class="form-group">
-                            <label for="abonne_id">Nom de l'Abonné</label>
-                            <select class="form-control" id="abonne_id" required>
-                                <option value="">Sélectionnez un Abonné</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="document_id">Titre du Document</label>
-                            <select class="form-control" id="document_id" required>
-                                <option value="">Sélectionnez un Document</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="date_emprunt">Date d'Emprunt</label>
-                            <input type="date" class="form-control" id="date_emprunt" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="date_retour">Date de Retour</label>
-                            <input type="date" class="form-control" id="date_retour" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Enregistrer</button>
-                    </form>
-                </div>
+   <!-- Modal pour Ajouter ou Modifier un Emprunt -->
+<div class="modal" id="empruntModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Ajouter un Emprunt</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="closeModal()">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="empruntForm">
+                
+                    <div class="form-group">
+                        <label for="abonne_id">Abonné</label>
+                        <select class="form-control" id="abonne_id" required>
+                            <option value="">Sélectionnez un Abonné</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="document_id">Document</label>
+                        <select class="form-control" id="document_id" required>
+                            <option value="">Sélectionnez un Document</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="date_emprunt">Date d'Emprunt</label>
+                        <input type="date" class="form-control" id="date_emprunt" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="date_retour">Date de Retour</label>
+                        <input type="date" class="form-control" id="date_retour" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                </form>
             </div>
         </div>
     </div>
+</div>
+
 
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
         // Ouvrir le modal d'ajout
-        function openAddEmpruntModal() {
-            $('#empruntForm')[0].reset();
-            $('#modalTitle').text("Ajouter un Emprunt");
+// Ouvrir le modal d'ajout
+function openAddEmpruntModal() {
+    $('#empruntForm')[0].reset();
+    $('#modalTitle').text("Ajouter un Emprunt");
 
-            // Charger les abonnés
-            $.get('/getabonne', function(response) {
-                const abonneSelect = $('#abonne_id');
-                abonneSelect.empty();
-                abonneSelect.append('<option value="">Sélectionnez un Abonné</option>');
-                response.abonnes.forEach(function(abonne) {
-                    abonneSelect.append('<option value="' + abonne.id + '">' + abonne.nom + '</option>');
-                });
-            });
+    // Masquer les champs "Nom de l'Abonné" et "Titre du Document"
+    $('#nom_abonne').closest('.form-group').hide();
+    $('#titre_document').closest('.form-group').hide();
 
-            // Charger les documents disponibles
-            $.get('/get_documents_disponibles', function(response) {
-                const documentSelect = $('#document_id');
-                documentSelect.empty();
-                documentSelect.append('<option value="">Sélectionnez un Document</option>');
-                response.documents.forEach(function(document) {
-                    documentSelect.append('<option value="' + document.id + '">' + document.titre + '</option>');
-                });
-            });
+    // Charger les abonnés
+    $.get('/getabonne', function(response) {
+        const abonneSelect = $('#abonne_id');
+        abonneSelect.empty();
+        abonneSelect.append('<option value="">Sélectionnez un Abonné</option>');
+        response.abonnes.forEach(function(abonne) {
+            abonneSelect.append('<option value="' + abonne.id + '">' + abonne.nom + '</option>');
+        });
+    });
 
-            $('#empruntForm').off('submit').on('submit', function(e) {
-                e.preventDefault();
-                addEmprunt();
-            });
+    // Charger les documents disponibles
+    $.get('/get_documents_disponibles', function(response) {
+        const documentSelect = $('#document_id');
+        documentSelect.empty();
+        documentSelect.append('<option value="">Sélectionnez un Document</option>');
+        response.documents.forEach(function(document) {
+            documentSelect.append('<option value="' + document.id + '">' + document.titre + '</option>');
+        });
+    });
 
-            $('#empruntModal').modal('show');
-        }
+    $('#empruntForm').off('submit').on('submit', function(e) {
+        e.preventDefault();
+        addEmprunt();
+    });
+
+    $('#empruntModal').modal('show');
+}
+
 
         // Ajouter un emprunt
         function addEmprunt() {
@@ -241,7 +250,9 @@
 
         // Ouvrir le modal pour mettre à jour un emprunt
      // Mettre à jour un emprunt
-     function updateEmprunt(empruntId) {
+   
+// Mettre à jour un emprunt
+function updateEmprunt(empruntId) {
     $('#modalTitle').text("Mettre à jour un Emprunt");
 
     // Charger l'emprunt pour le modifier
@@ -251,18 +262,56 @@
         $('#date_emprunt').val(response.date_emprunt);
         $('#date_retour').val(response.date_retour);
 
-        // Récupérer les informations de l'abonné
-        $.get('/get_abonne/' + response.abonne_id, function(abonne) {
-    console.log(abonne); // Vérifiez ce que contient la réponse
-    $('#nom_abonne').val(abonne.nom);
-});
+        // Afficher les champs "Nom de l'Abonné" et "Titre du Document"
+        $('#nom_abonne').closest('.form-group').show();
+        $('#titre_document').closest('.form-group').show();
 
-$.get('/get_document/' + response.document_id, function(document) {
-    console.log(document); // Vérifiez ce que contient la réponse
-    $('#titre_document').val(document.titre);
-});
+        // Charger et sélectionner les abonnés
+        $.get('/getabonne', function(abonneResponse) {
+            const abonneSelect = $('#abonne_id');
+            abonneSelect.empty();
+            abonneSelect.append('<option value="">Sélectionnez un Abonné</option>');
+            abonneResponse.abonnes.forEach(function(item) {
+                abonneSelect.append('<option value="' + item.id + '">' + item.nom + '</option>');
+            });
+
+            // Pré-sélectionner l'abonné actuel
+            $('#abonne_id').val(response.abonne_id);
+
+            // Charger les informations de l'abonné pour afficher le nom
+            $.get('/get_abonne/' + response.abonne_id, function(abonne) {
+                $('#nom_abonne').val(abonne.nom);
+            }).fail(function() {
+                alert('Erreur lors de la récupération des informations de l’abonné.');
+            });
+        }).fail(function() {
+            alert('Erreur lors de la récupération des abonnés disponibles.');
+        });
+
+        // Charger et sélectionner les documents
+        $.get('/get_documents_disponibles', function(docResponse) {
+            const documentSelect = $('#document_id');
+            documentSelect.empty();
+            documentSelect.append('<option value="">Sélectionnez un Document</option>');
+            docResponse.documents.forEach(function(doc) {
+                documentSelect.append('<option value="' + doc.id + '">' + doc.titre + '</option>');
+            });
+
+            // Pré-sélectionner le document actuel
+            $('#document_id').val(response.document_id);
+
+            // Charger les informations du document pour afficher le titre
+            $.get('/get_document/' + response.document_id, function(document) {
+                $('#titre_document').val(document.titre);
+            }).fail(function() {
+                alert('Erreur lors de la récupération du document.');
+            });
+        }).fail(function() {
+            alert('Erreur lors de la récupération des documents disponibles.');
+        });
     });
 
+    // Gestion du formulaire
     $('#empruntForm').off('submit').on('submit', function(e) {
         e.preventDefault();
 

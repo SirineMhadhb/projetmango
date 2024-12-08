@@ -44,27 +44,38 @@ $(document).ready(function() {
         });
     };
 
-    // Edit an Abonné
-    window.editAbonne = function(id) {
-        $.get(`/get_abonne/${id}`, function(response) {
+  // Edit an Abonné
+  window.editAbonne = function (id) {
+    console.log("Appel de editAbonne avec ID:", id);
+
+    $.get(`/get_abonne/${id}`)
+        .done(function (response) {
+            console.log("Réponse de l'API :", response);
             if (response.error) {
                 alert(response.error);
             } else {
+                console.log("Données de l'abonné récupérées :", response);
+
                 $('#nom').val(response.nom);
                 $('#prenom').val(response.prenom);
                 $('#adresse').val(response.adresse);
                 $('#date_inscription').val(response.date_inscription);
-                
+
                 // Update the form action to edit
-                $('#abonneForm').off('submit').on('submit', function(e) {
+                $('#abonneForm').off('submit').on('submit', function (e) {
                     e.preventDefault();
                     updateAbonne(id);
                 });
 
                 $('#addAbonneModal').modal('show');
             }
+        })
+        .fail(function (jqXHR, textStatus, errorThrown) {
+            console.error("Erreur AJAX :", textStatus, errorThrown);
+            alert("Une erreur s'est produite lors de la récupération des données de l'abonné.");
         });
-    };
+};
+
 
     // Update an Abonné
     function updateAbonne(id) {
@@ -108,27 +119,23 @@ $(document).ready(function() {
         }
     };
 
+  
     window.editAbonne = function(id) {
         $.get(`/get_abonne/${id}`, function(response) {
             if (response.error) {
                 alert(response.error);
             } else {
-                // Pré-remplit le formulaire avec les données de l'abonné
+                $('#abonneId').val(id); // Stocker l'ID dans un champ caché
                 $('#nom').val(response.nom);
                 $('#prenom').val(response.prenom);
                 $('#adresse').val(response.adresse);
                 $('#date_inscription').val(response.date_inscription);
-                
-                // Met à jour l'action du formulaire pour la modification
-                $('#abonneForm').off('submit').on('submit', function(e) {
-                    e.preventDefault();
-                    updateAbonne(id);
-                });
     
-                // Affiche la modale
-                $('#addAbonneModal').modal('show');
+                $('#addAbonneModal').modal('show'); // Afficher la modale
             }
         });
     };
     
+
+
 });

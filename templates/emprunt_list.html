@@ -230,28 +230,93 @@
             });
         }
 
-        function updateEmprunt(empruntId) {
-    const data = {
-        abonne_id: $('#abonne_id').val(),
-        document_id: $('#document_id').val(),
-        date_emprunt: $('#date_emprunt').val(),
-        date_retour: $('#date_retour').val(),
-    };
 
-    $.ajax({
-        url: '/update_emprunt/' + empruntId,
-        type: 'PUT',
-        contentType: 'application/json',
-        data: JSON.stringify(data),
-        success: function(response) {
-            alert(response.message);
-            location.reload();
-        },
-        error: function(xhr, status, error) {
-            alert('Erreur: ' + error);
+
+        //Aficher les détails d'un emprunt
+        function viewEmprunt(empruntId) {
+            $.get('/emprunt/' + empruntId, function(response) {
+                alert('Emprunt: \nAbonné: ' + response.abonne_nom + '\nDocument: ' + response.document_titre + '\nDate d\'Emprunt: ' + response.date_emprunt + '\nDate de Retour: ' + response.date_retour);
+            });
         }
+
+        // Ouvrir le modal pour mettre à jour un emprunt
+     // Mettre à jour un emprunt
+     function updateEmprunt(empruntId) {
+    $('#modalTitle').text("Mettre à jour un Emprunt");
+
+    // Charger l'emprunt pour le modifier
+    $.get('/emprunt/' + empruntId, function(response) {
+        $('#abonne_id').val(response.abonne_id);
+        $('#document_id').val(response.document_id);
+        $('#date_emprunt').val(response.date_emprunt);
+        $('#date_retour').val(response.date_retour);
+
+        // Récupérer les informations de l'abonné
+        $.get('/get_abonne/' + response.abonne_id, function(abonne) {
+    console.log(abonne); // Vérifiez ce que contient la réponse
+    $('#nom_abonne').val(abonne.nom);
+});
+
+$.get('/get_document/' + response.document_id, function(document) {
+    console.log(document); // Vérifiez ce que contient la réponse
+    $('#titre_document').val(document.titre);
+});
     });
+
+    $('#empruntForm').off('submit').on('submit', function(e) {
+        e.preventDefault();
+
+        const data = {
+            abonne_id: $('#abonne_id').val(),
+            document_id: $('#document_id').val(),
+            date_emprunt: $('#date_emprunt').val(),
+            date_retour: $('#date_retour').val()
+        };
+
+        $.ajax({
+            url: '/update_emprunt/' + empruntId,
+            type: 'PUT',
+            contentType: 'application/json',
+            data: JSON.stringify({ emprunt: data }),
+            success: function(response) {
+                alert(response.message);
+                location.reload();
+            },
+            error: function(xhr, status, error) {
+                alert('Erreur: ' + error);
+            }
+        });
+    });
+
+    $('#empruntModal').modal('show');
 }
+
+
+function deleteEmprunt(id) {
+    if (confirm("Êtes-vous sûr de vouloir supprimer cet emprunt ?")) {
+        fetch(`/delete_emprunt/${id}`, {
+            method: 'DELETE',  // Utilisation de la méthode DELETE
+            headers: {
+                'Content-Type': 'application/json'
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                alert(data.message);  // Affiche un message de succès
+                // Rafraîchir la page ou supprimer l'élément de la table
+                location.reload();  // Cette ligne recharge la page pour afficher la liste mise à jour
+            } else {
+                alert('Erreur lors de la suppression de l\'emprunt');
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            alert('Une erreur est survenue.');
+        });
+    }
+}
+
 
         // Fermer le modal
         function closeModal() {
@@ -260,3 +325,7 @@
     </script>
 </body>
 </html>
+
+
+
+

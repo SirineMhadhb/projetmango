@@ -259,45 +259,56 @@ def get_emprunts():
     return render_template('emprunt_list.html', emprunts=emprunt_list)
 
 
-@app.route('/get_emprunt/<id>', methods=['GET'])
-def get_emprunt(id):
-    emprunt = mongo.db.emprunts.find_one({"_id": ObjectId(id)})
+@app.route('/emprunt/<emprunt_id>')
+def get_emprunt(emprunt_id):
+    emprunt = mongo.db.emprunts.find_one({"_id": ObjectId(emprunt_id)})
+    
     if emprunt:
         abonne_id = emprunt.get("abonne_id")
         document_id = emprunt.get("document_id")
-
-        abonne_nom = "Inconnu"
-        if abonne_id:
-            abonne = mongo.db.abonnes.find_one({"_id": ObjectId(abonne_id)})
-            if abonne:
-                abonne_nom = abonne.get("nom", "Inconnu")
-
-        document_titre = "Inconnu"
-        if document_id:
-            document = mongo.db.documents.find_one({"_id": ObjectId(document_id)})
-            if document:
-                document_titre = document.get("titre", "Inconnu")
-
+        
+        abonne = mongo.db.abonnes.find_one({"_id": ObjectId(abonne_id)})
+        document = mongo.db.documents.find_one({"_id": ObjectId(document_id)})
+        
         return jsonify({
-            "id": str(emprunt["_id"]),
-            "abonne_nom": abonne_nom,
-            "document_titre": document_titre,
-            "date_emprunt": emprunt.get("date_emprunt"),
-            "date_retour": emprunt.get("date_retour")
-        }), 200
+            "abonne_nom": f"{abonne['nom']} {abonne['prenom']}" if abonne else "Abonné introuvable",
+            "document_titre": document['titre'] if document else "Document introuvable",
+            "date_emprunt": emprunt['date_emprunt'],
+            "date_retour": emprunt['date_retour'],
+            "abonne_id": abonne_id,
+            "document_id": document_id
+        })
     else:
-        return jsonify({"error": "Emprunt non trouvé"}), 404
+        return jsonify({"message": "Emprunt non trouvé"}), 404
 
-# Route pour mettre à jour un emprunt
-@app.route('/update_emprunt/<id>', methods=['PUT'])
-def update_emprunt(id):
-    data = request.json
-    try:
-        emprunt_id = ObjectId(id)
-        mongo.db.emprunts.update_one({"_id": emprunt_id}, {"$set": data})
+
+from flask import request, redirect, url_for, flash
+
+@app.route('/update_emprunt/<emprunt_id>', methods=['PUT'])
+def update_emprunt(emprunt_id):
+    data = request.get_json()
+    emprunt_data = data.get("emprunt")
+
+    abonne_id = emprunt_data.get("abonne_id")
+    document_id = emprunt_data.get("document_id")
+    date_emprunt = emprunt_data.get("date_emprunt")
+    date_retour = emprunt_data.get("date_retour")
+
+    # Mettre à jour l'emprunt dans la base de données
+    result = mongo.db.emprunts.update_one(
+        {"_id": ObjectId(emprunt_id)},
+        {"$set": {
+            "abonne_id": abonne_id,
+            "document_id": document_id,
+            "date_emprunt": date_emprunt,
+            "date_retour": date_retour
+        }}
+    )
+    
+    if result.matched_count > 0:
         return jsonify({"message": "Emprunt mis à jour avec succès!"})
-    except Exception as e:
-        return jsonify({"error": "Erreur lors de la mise à jour de l'emprunt"}), 500
+    else:
+        return jsonify({"message": "Emprunt non trouvé"}), 404
 
 
 # Route pour ajouter un emprunt
@@ -317,11 +328,23 @@ def add_emprunt():
         return jsonify({"error": f"Erreur : {str(e)}"}), 500
 
 # Route pour supprimer un emprunt
+# @app.route('/delete_emprunt/<id>', methods=['POST'])
+# def delete_emprunt(id):
+#     # Delete the emprunt by its ID
+#     mongo.db.emprunts.delete_one({"_id": ObjectId(id)})
+
+#     flash("Emprunt deleted successfully", "success")
+#     return redirect(url_for('get_emprunts'))  # Redirect to the list of emprunts
+
 @app.route('/delete_emprunt/<id>', methods=['DELETE'])
 def delete_emprunt(id):
     try:
-        mongo.db.emprunts.delete_one({"_id": ObjectId(id)})
-        return jsonify({"message": "Emprunt supprimé avec succès!"}), 200
+        id = ObjectId(id)
+        result = mongo.db.emprunts.delete_one({"_id": id})
+        if result.deleted_count > 0:
+            return jsonify({"message": "Emprunt deleted successfully"})
+        else:
+            return jsonify({"message": "No emprunt found to delete"}), 404
     except Exception as e:
         return jsonify({"error": f"Erreur lors de la suppression de l'emprunt: {str(e)}"}), 500
 

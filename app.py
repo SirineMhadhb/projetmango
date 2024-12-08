@@ -118,14 +118,46 @@ def update_abonne(id):
     except Exception as e:
         return jsonify({"error": "Erreur lors de la mise à jour de l'abonné"}), 500
 
-@app.route('/delete_abonne/<id>', methods=['DELETE'])
-def delete_abonne(id):
+# @app.route('/delete_abonne/<id>', methods=['DELETE'])
+# def delete_abonne(id):
+#     try:
+#         abonne_id = ObjectId(id)
+#         mongo.db.abonnes.delete_one({"_id": abonne_id})
+#         return jsonify({"message": "Abonné supprimé avec succès!"})
+#     except Exception as e:
+#         return jsonify({"error": "Erreur lors de la suppression de l'abonné"}), 500
+
+
+# @app.route('/delete_abonne/<id>', methods=['DELETE'])
+# def delete_abonne(id):
+#     try:
+#         abonne_id = ObjectId(id)
+        
+#         # Supprimer les emprunts associés à cet abonné
+#         mongo.db.emprunts.delete_many({"abonne_id": str(abonne_id)})
+        
+#         # Supprimer l'abonné
+#         mongo.db.abonnes.delete_one({"_id": abonne_id})
+        
+#         return jsonify({"message": "Abonné et ses emprunts associés supprimés avec succès!"})
+#     except Exception as e:
+#         return jsonify({"error": f"Erreur lors de la suppression de l'abonné: {e}"}), 500
+
+@app.route('/delete_document/<id>', methods=['DELETE'])
+def delete_document(id):
     try:
-        abonne_id = ObjectId(id)
-        mongo.db.abonnes.delete_one({"_id": abonne_id})
-        return jsonify({"message": "Abonné supprimé avec succès!"})
+        document_id = ObjectId(id)
+        
+        # Supprimer les emprunts associés à ce document
+        mongo.db.emprunts.delete_many({"document_id": str(document_id)})
+        
+        # Supprimer le document
+        mongo.db.documents.delete_one({"_id": document_id})
+        
+        return jsonify({"message": "Document et ses emprunts associés supprimés avec succès!"})
     except Exception as e:
-        return jsonify({"error": "Erreur lors de la suppression de l'abonné"}), 500
+        return jsonify({"error": f"Erreur lors de la suppression du document: {e}"}), 500
+
 
 # Routes pour les documents
 @app.route('/documents')

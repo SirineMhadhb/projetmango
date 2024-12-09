@@ -14,6 +14,7 @@ mongo = PyMongo(app)
 
 
 
+
 # Route d'accueil
 @app.route('/')
 def index():
@@ -248,10 +249,36 @@ def get_documents_disponibles():
 #     return render_template('emprunt_list.html', emprunts=emprunts_list), 200
 
 # Route pour ajouter un emprunt
-from bson import ObjectId  # Assurez-vous d'importer ObjectId de bson
+
+
+from datetime import datetime
+
+def update_status_retard():
+    # Récupérer les emprunts où la date de retour est dépassée et le statut n'est pas encore "retard"
+    emprunts = mongo.db.emprunts.find({
+        "status": {"$ne": "retard"}
+    })
+
+    for emprunt in emprunts:
+        try:
+            # Convertir date_retour en objet datetime
+            date_retour = datetime.strptime(emprunt["date_retour"], "%Y-%m-%d")
+            
+            # Vérifier si la date est dépassée
+            if date_retour < datetime.now():
+                # Mettre à jour le statut en "retard"
+                mongo.db.emprunts.update_one(
+                    {"_id": emprunt["_id"]},
+                    {"$set": {"status": "retard"}}
+                )
+        except ValueError:
+            print(f"Erreur de format pour la date de retour: {emprunt['date_retour']}")
 
 @app.route('/emprunts')
 def get_emprunts():
+    # Met à jour les statuts si nécessaire
+    update_status_retard()
+
     emprunts = mongo.db.emprunts.find()
     emprunt_list = []
 
@@ -259,52 +286,55 @@ def get_emprunts():
         abonne_id = emprunt.get("abonne_id")
         document_id = emprunt.get("document_id")
 
-        # Check if abonne_id is valid
-        if ObjectId.is_valid(abonne_id):
-            abonne = mongo.db.abonnes.find_one({"_id": ObjectId(abonne_id)})
-        else:
-            abonne = None  # Handle invalid abonne_id case
+        # Vérification de la validité des IDs
+        abonne = mongo.db.abonnes.find_one({"_id": ObjectId(abonne_id)}) if ObjectId.is_valid(abonne_id) else None
+        document = mongo.db.documents.find_one({"_id": ObjectId(document_id)}) if ObjectId.is_valid(document_id) else None
 
-        # Check if document_id is valid
-        if ObjectId.is_valid(document_id):
-            document = mongo.db.documents.find_one({"_id": ObjectId(document_id)})
-        else:
-            document = None  # Handle invalid document_id case
-
-        # Append emprunt to the list
+        # Ajouter l'emprunt à la liste
         emprunt_list.append({
             "id": str(emprunt["_id"]),
             "abonne_nom": f"{abonne['nom']} {abonne['prenom']}" if abonne else "Abonné introuvable",
             "document_titre": document["titre"] if document else "Document introuvable",
             "date_emprunt": emprunt["date_emprunt"],
             "date_retour": emprunt["date_retour"],
+            "status": emprunt.get("status", "Status not available")
         })
-    
+
     return render_template('emprunt_list.html', emprunts=emprunt_list)
-
-
 @app.route('/emprunt/<emprunt_id>')
 def get_emprunt(emprunt_id):
-    emprunt = mongo.db.emprunts.find_one({"_id": ObjectId(emprunt_id)})
-    
-    if emprunt:
-        abonne_id = emprunt.get("abonne_id")
-        document_id = emprunt.get("document_id")
+    try:
+        # Fetch the emprunt by its ID
+        emprunt = mongo.db.emprunts.find_one({"_id": ObjectId(emprunt_id)})
         
-        abonne = mongo.db.abonnes.find_one({"_id": ObjectId(abonne_id)})
-        document = mongo.db.documents.find_one({"_id": ObjectId(document_id)})
-        
-        return jsonify({
-            "abonne_nom": f"{abonne['nom']} {abonne['prenom']}" if abonne else "Abonné introuvable",
-            "document_titre": document['titre'] if document else "Document introuvable",
-            "date_emprunt": emprunt['date_emprunt'],
-            "date_retour": emprunt['date_retour'],
-            "abonne_id": abonne_id,
-            "document_id": document_id
-        })
-    else:
-        return jsonify({"message": "Emprunt non trouvé"}), 404
-
+        # Check if emprunt exists
+        if emprunt:
+            # Get the abonne and document details
+            abonne_id = emprunt.get("abonne_id")
+            document_id = emprunt.get("document_id")
+            
+            # Retrieve the associated abonne
+            abonne = mongo.db.abonnes.find_one({"_id": ObjectId(abonne_id)}) if ObjectId.is_valid(abonne_id) else None
+            
+            # Retrieve the associated document
+            document = mongo.db.documents.find_one({"_id": ObjectId(document_id)}) if ObjectId.is_valid(document_id) else None
+            
+            # Return the emprunt details along with the associated abonne and document information
+            return jsonify({
+                "abonne_nom": f"{abonne['nom']} {abonne['prenom']}" if abonne else "Abonné introuvable",
+                "document_titre": document['titre'] if document else "Document introuvable",
+                "date_emprunt": emprunt['date_emprunt'],
+                "date_retour": emprunt['date_retour'],
+                "status": emprunt['status'],  # Adding the 'status' field
+                "abonne_id": abonne_id,
+                "document_id": document_id
+            })
+        else:
+            # If the emprunt is not found, return an error message
+            return jsonify({"message": "Emprunt non trouvé"}), 404
+    except Exception as e:
+        # Handle any unexpected errors
+        return jsonify({"error": f"Erreur: {str(e)}"}), 500
 
 from flask import request, redirect, url_for, flash
 
@@ -317,15 +347,17 @@ def update_emprunt(emprunt_id):
     document_id = emprunt_data.get("document_id")
     date_emprunt = emprunt_data.get("date_emprunt")
     date_retour = emprunt_data.get("date_retour")
+    status = emprunt_data.get("status")  # Ajouter le champ status
 
-    # Mettre à jour l'emprunt dans la base de données
+    # Mise à jour de l'emprunt dans la base de données
     result = mongo.db.emprunts.update_one(
         {"_id": ObjectId(emprunt_id)},
         {"$set": {
             "abonne_id": abonne_id,
             "document_id": document_id,
             "date_emprunt": date_emprunt,
-            "date_retour": date_retour
+            "date_retour": date_retour,
+            "status": status  # Mettre à jour le statut
         }}
     )
     
@@ -341,9 +373,12 @@ from bson import ObjectId
 def add_emprunt():
     data = request.json['emprunt']
     
-    # Ensure valid ObjectId
+    # Vérifier les IDs valides
     if not ObjectId.is_valid(data.get("abonne_id", "")) or not ObjectId.is_valid(data.get("document_id", "")):
         return jsonify({"error": "ID invalide pour l'abonné ou le document"}), 400
+
+    # Ajouter le statut par défaut "emprunté"
+    data["status"] = "emprunté"
 
     try:
         mongo.db.emprunts.insert_one(data)

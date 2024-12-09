@@ -15,6 +15,21 @@
             color: #333;
         }
 
+
+        .filter-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .filter-section input,
+        .filter-section select {
+            border-radius: 20px;
+        }
+
+
         /* En-tête */
         header {
             text-align: center;
@@ -76,6 +91,30 @@
     <div class="container mt-5">
         <h2>Liste des documents</h2>
         <button class="btn btn-success" onclick="openAddDocumentModal()">Ajouter un document</button>
+
+
+        <div class="row mt-4">
+            <div class="col-md-3">
+                <input type="text" class="form-control" id="filterTitle" placeholder="Filtrer par titre">
+            </div>
+            <div class="col-md-3">
+                <input type="text" class="form-control" id="filterAuthor" placeholder="Filtrer par auteur">
+            </div>
+            <div class="col-md-2">
+                <input type="text" class="form-control" id="filterGenre" placeholder="Filtrer par genre">
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" id="filterAvailability">
+                    <option value="">Disponibilité</option>
+                    <option value="oui">Oui</option>
+                    <option value="non">Non</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="date" class="form-control" id="filterDate">
+            </div>
+        </div>
+    
         <table class="table table-bordered mt-3">
             <thead>
                 <tr>
@@ -274,6 +313,40 @@
                 });
             }
         }
+
+        function filterDocuments() {
+        const filterTitle = $('#filterTitle').val().toLowerCase();
+        const filterAuthor = $('#filterAuthor').val().toLowerCase();
+        const filterGenre = $('#filterGenre').val().toLowerCase();
+        const filterAvailability = $('#filterAvailability').val().toLowerCase();
+        const filterDate = $('#filterDate').val();
+
+        $('#documentsList tr').each(function () {
+            const title = $(this).find('td:nth-child(1)').text().toLowerCase();
+            const author = $(this).find('td:nth-child(2)').text().toLowerCase();
+            const genre = $(this).find('td:nth-child(3)').text().toLowerCase();
+            const availability = $(this).find('td:nth-child(5)').text().toLowerCase();
+            const date = $(this).find('td:nth-child(4)').text();
+
+            const matchesTitle = !filterTitle || title.includes(filterTitle);
+            const matchesAuthor = !filterAuthor || author.includes(filterAuthor);
+            const matchesGenre = !filterGenre || genre.includes(filterGenre);
+            const matchesAvailability = !filterAvailability || availability === filterAvailability;
+            const matchesDate = !filterDate || date === filterDate;
+
+            if (matchesTitle && matchesAuthor && matchesGenre && matchesAvailability && matchesDate) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+    }
+
+    // Attacher les événements pour filtrer en temps réel
+    $(document).ready(function () {
+        $('#filterTitle, #filterAuthor, #filterGenre, #filterAvailability, #filterDate').on('input change', filterDocuments);
+    });
+
 
         // Initialisation
         $(document).ready(function() {

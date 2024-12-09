@@ -102,6 +102,21 @@
     </header>
 
     <h1>Liste des Emprunts</h1>
+    <div class="container my-3">
+        <div class="row">
+            <div class="col-md-4">
+                <input type="text" id="filterNom" class="form-control" placeholder="Rechercher par nom de l'abonné">
+            </div>
+            <div class="col-md-4">
+                <input type="text" id="filterTitre" class="form-control" placeholder="Rechercher par titre de document">
+            </div>
+            <div class="col-md-4">
+                <input type="date" id="filterDate" class="form-control" placeholder="Rechercher par date">
+            </div>
+        </div>
+    </div>
+    
+    
     <button class="btn btn-add" onclick="openAddEmpruntModal()">Ajouter un Emprunt</button>
 
     <table class="table table-bordered">
@@ -111,6 +126,7 @@
                 <th>Titre du Document</th>
                 <th>Date d'Emprunt</th>
                 <th>Date de Retour</th>
+                <th>Status</th> <!-- Add this column -->
                 <th>Actions</th>
             </tr>
         </thead>
@@ -121,6 +137,7 @@
                 <td>{{ emprunt.document_titre }}</td>
                 <td>{{ emprunt.date_emprunt }}</td>
                 <td>{{ emprunt.date_retour }}</td>
+                <td>{{ emprunt.status }}</td> <!-- Add status display -->
                 <td class="action-buttons">
                     <button class="btn btn-view" onclick="viewEmprunt('{{ emprunt.id }}')">Consulter</button>
                     <button class="btn btn-update" onclick="updateEmprunt('{{ emprunt.id }}')">Mettre à jour</button>
@@ -129,6 +146,7 @@
             </tr>
             {% endfor %}
         </tbody>
+        
     </table>
 
    
@@ -166,6 +184,14 @@
                         <label for="date_retour">Date de Retour</label>
                         <input type="date" class="form-control" id="date_retour" required>
                     </div>
+                    <div class="form-group">
+                        <label for="status">Status</label>
+                        <select class="form-control" id="status">
+                            <option value="emprunté">Emprunté</option>
+                            <option value="retourné">Retourné</option>
+                            <option value="retourné">retard</option>
+                        </select>
+                    </div>
                     <button type="submit" class="btn btn-primary">Enregistrer</button>
                 </form>
             </div>
@@ -196,6 +222,7 @@
                 <p id="consult-document">Titre du Document: </p>
                 <p id="consult-emprunt-date">Date d'Emprunt: </p>
                 <p id="consult-retour-date">Date de Retour: </p>
+                <p id="consult-status">Status: </p> 
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="closeConsultModal()">Fermer</button>
@@ -249,27 +276,58 @@ function openAddEmpruntModal() {
 
         // Ajouter un emprunt
         function addEmprunt() {
-            const data = {
-                abonne_id: $('#abonne_id').val(),
-                document_id: $('#document_id').val(),
-                date_emprunt: $('#date_emprunt').val(),
-                date_retour: $('#date_retour').val()
-            };
+    const data = {
+        abonne_id: $('#abonne_id').val(),
+        document_id: $('#document_id').val(),
+        date_emprunt: $('#date_emprunt').val(),
+        date_retour: $('#date_retour').val(),
+        status: $('#status').val() // Capture the selected status
+    };
 
-            $.ajax({
-                url: '/ajouter_emprunt',
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({ emprunt: data }),
-                success: function(response) {
-                    alert(response.message);
-                    location.reload();
-                },
-                error: function(xhr, status, error) {
-                    alert('Erreur: ' + error);
-                }
-            });
+    $.ajax({
+        url: '/ajouter_emprunt',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ emprunt: data }),
+        success: function(response) {
+            alert(response.message);
+            $('#empruntModal').modal('hide');
+            // Reload the emprunts list or add the new emprunt to the table dynamically
+        },
+        error: function(error) {
+            alert("Erreur lors de l'ajout de l'emprunt");
         }
+    });
+}
+
+        document.addEventListener('DOMContentLoaded', () => {
+    const filterNom = document.getElementById('filterNom');
+    const filterTitre = document.getElementById('filterTitre');
+    const filterDate = document.getElementById('filterDate');
+    const tableRows = document.querySelectorAll('#emprunts-table tr');
+
+    function filterTable() {
+        const nomValue = filterNom.value.toLowerCase();
+        const titreValue = filterTitre.value.toLowerCase();
+        const dateValue = filterDate.value;
+
+        tableRows.forEach(row => {
+            const nomCell = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
+            const titreCell = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+            const dateCell = row.querySelector('td:nth-child(3)').textContent;
+
+            const matchesNom = nomValue === '' || nomCell.includes(nomValue);
+            const matchesTitre = titreValue === '' || titreCell.includes(titreValue);
+            const matchesDate = dateValue === '' || dateCell === dateValue;
+
+            row.style.display = matchesNom && matchesTitre && matchesDate ? '' : 'none';
+        });
+    }
+
+    filterNom.addEventListener('input', filterTable);
+    filterTitre.addEventListener('input', filterTable);
+    filterDate.addEventListener('input', filterTable);
+});
 
 
 
@@ -293,6 +351,7 @@ function updateEmprunt(empruntId) {
         $('#document_id').val(response.document_id);
         $('#date_emprunt').val(response.date_emprunt);
         $('#date_retour').val(response.date_retour);
+        $('#status').val(response.status);
 
         // Afficher les champs "Nom de l'Abonné" et "Titre du Document"
         $('#nom_abonne').closest('.form-group').show();
@@ -351,7 +410,8 @@ function updateEmprunt(empruntId) {
             abonne_id: $('#abonne_id').val(),
             document_id: $('#document_id').val(),
             date_emprunt: $('#date_emprunt').val(),
-            date_retour: $('#date_retour').val()
+            date_retour: $('#date_retour').val() ,
+            status: $('#status').val()
         };
 
         $.ajax({
@@ -404,6 +464,7 @@ function viewEmprunt(empruntId) {
                 $('#consult-document').text('Titre du Document: ' + response.document_titre);
                 $('#consult-emprunt-date').text('Date d\'Emprunt: ' + response.date_emprunt);
                 $('#consult-retour-date').text('Date de Retour: ' + response.date_retour);
+                $('#consult-status').text("Status: " + response.status);
 
                 // Afficher le modal
                 $('#consultEmpruntModal').modal('show');

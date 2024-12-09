@@ -114,6 +114,10 @@
                 <input type="date" id="filterDate" class="form-control" placeholder="Rechercher par date">
             </div>
         </div>
+        <br>
+        <div class="col-md-4">
+            <input type="text" id="filterStatus" class="form-control" placeholder="Rechercher par status">
+        </div>
     </div>
     
     
@@ -126,7 +130,7 @@
                 <th>Titre du Document</th>
                 <th>Date d'Emprunt</th>
                 <th>Date de Retour</th>
-                <th>Status</th> <!-- Add this column -->
+                <th>Status</th> 
                 <th>Actions</th>
             </tr>
         </thead>
@@ -189,7 +193,7 @@
                         <select class="form-control" id="status">
                             <option value="emprunté">Emprunté</option>
                             <option value="retourné">Retourné</option>
-                            <option value="retourné">retard</option>
+                            <option value="retard">En retard</option>                            
                         </select>
                     </div>
                     <button type="submit" class="btn btn-primary">Enregistrer</button>
@@ -300,34 +304,40 @@ function openAddEmpruntModal() {
     });
 }
 
-        document.addEventListener('DOMContentLoaded', () => {
-    const filterNom = document.getElementById('filterNom');
-    const filterTitre = document.getElementById('filterTitre');
-    const filterDate = document.getElementById('filterDate');
-    const tableRows = document.querySelectorAll('#emprunts-table tr');
+document.addEventListener('DOMContentLoaded', () => {
+        const filterNom = document.getElementById('filterNom');
+        const filterTitre = document.getElementById('filterTitre');
+        const filterDate = document.getElementById('filterDate');
+        const filterStatus = document.getElementById('filterStatus');
+        const tableRows = document.querySelectorAll('#emprunts-table tr');
 
-    function filterTable() {
-        const nomValue = filterNom.value.toLowerCase();
-        const titreValue = filterTitre.value.toLowerCase();
-        const dateValue = filterDate.value;
+        function filterTable() {
+            const nomValue = filterNom.value.toLowerCase();
+            const titreValue = filterTitre.value.toLowerCase();
+            const dateValue = filterDate.value;
+            const statusValue = filterStatus.value.toLowerCase();
 
-        tableRows.forEach(row => {
-            const nomCell = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
-            const titreCell = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
-            const dateCell = row.querySelector('td:nth-child(3)').textContent;
+            tableRows.forEach(row => {
+                const nomCell = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
+                const titreCell = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                const dateCell = row.querySelector('td:nth-child(3)').textContent;
+                const statusCell = row.querySelector('td:nth-child(5)').textContent.toLowerCase();
 
-            const matchesNom = nomValue === '' || nomCell.includes(nomValue);
-            const matchesTitre = titreValue === '' || titreCell.includes(titreValue);
-            const matchesDate = dateValue === '' || dateCell === dateValue;
+                const matchesNom = nomValue === '' || nomCell.includes(nomValue);
+                const matchesTitre = titreValue === '' || titreCell.includes(titreValue);
+                const matchesDate = dateValue === '' || dateCell === dateValue;
+                const matchesStatus = statusValue === '' || statusCell.includes(statusValue);
 
-            row.style.display = matchesNom && matchesTitre && matchesDate ? '' : 'none';
-        });
-    }
+                row.style.display = matchesNom && matchesTitre && matchesDate && matchesStatus ? '' : 'none';
+            });
+        }
 
-    filterNom.addEventListener('input', filterTable);
-    filterTitre.addEventListener('input', filterTable);
-    filterDate.addEventListener('input', filterTable);
-});
+        filterNom.addEventListener('input', filterTable);
+        filterTitre.addEventListener('input', filterTable);
+        filterDate.addEventListener('input', filterTable);
+        filterStatus.addEventListener('input', filterTable);
+    });
+
 
 
 

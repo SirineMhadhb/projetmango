@@ -278,31 +278,71 @@ function openAddEmpruntModal() {
 }
 
 
+function loadEmprunts() {
+    $.get('/emprunts', function(response) {
+        const emprunts = response.emprunts;
+        const empruntRows = emprunts.map(emprunt => `
+            <tr>
+                <td>${emprunt.abonne_nom}</td>
+                <td>${emprunt.document_titre}</td>
+                <td>${emprunt.date_emprunt}</td>
+                <td>${emprunt.date_retour}</td>
+                <td>${emprunt.status}</td>
+                <td>
+                    <button class="btn btn-info" onclick="viewEmprunt('${emprunt.id}')">Consulter</button>
+                    <button class="btn btn-warning" onclick="updateEmprunt('${emprunt.id}')">Mettre à jour</button>
+                    <button class="btn btn-danger" onclick="deleteEmprunt('${emprunt.id}')">Supprimer</button>
+                </td>
+            </tr>
+        `);
+        $('#emprunts-table').html(empruntRows.join(''));
+    });
+}
+
         // Ajouter un emprunt
-        function addEmprunt() {
+       // Ajouter un emprunt
+function addEmprunt() {
     const data = {
         abonne_id: $('#abonne_id').val(),
         document_id: $('#document_id').val(),
         date_emprunt: $('#date_emprunt').val(),
         date_retour: $('#date_retour').val(),
-        status: $('#status').val() // Capture the selected status
+        status: $('#status').val()
     };
 
     $.ajax({
-        url: '/ajouter_emprunt',
-        method: 'POST',
+        url: '/ajouter_emprunt',  // URL de votre endpoint pour ajouter un emprunt
+        type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({ emprunt: data }),
         success: function(response) {
             alert(response.message);
+            loadEmprunts();  // Recharger la liste des emprunts
+            updateDocumentQuantity(data.document_id);  // Mettre à jour la quantité du document
             $('#empruntModal').modal('hide');
-            // Reload the emprunts list or add the new emprunt to the table dynamically
         },
-        error: function(error) {
-            alert("Erreur lors de l'ajout de l'emprunt");
+        error: function(xhr, status, error) {
+            alert('Erreur: ' + error);
         }
     });
 }
+
+// Mettre à jour le nombre d'exemplaires du document après un emprunt
+function updateDocumentQuantity(documentId) {
+    $.ajax({
+        url: `/emprunter_document/${documentId}`,
+        type: 'POST',
+        contentType: 'application/json',
+        success: function(response) {
+            alert('Document emprunté avec succès');
+            loadDocuments();  // Recharger la liste des documents pour afficher la nouvelle quantité
+        },
+        error: function(xhr, status, error) {
+            alert('Erreur lors de l\'emprunt : ' + error);
+        }
+    });
+}
+
 
 document.addEventListener('DOMContentLoaded', () => {
         const filterNom = document.getElementById('filterNom');

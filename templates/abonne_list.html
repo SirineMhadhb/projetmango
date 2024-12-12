@@ -50,6 +50,15 @@
             background-color: #4CAF50; /* Fond au survol */
             color: white; /* Texte au survol */
         }
+        .filter-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .filter-section .form-control {
+            max-width: 250px;
+        }
 
         /* Mobile responsive */
         @media (max-width: 600px) {
@@ -79,45 +88,49 @@
         
         <h1>Liste des Abonnés</h1>
              <!-- Bouton pour ajouter un abonné -->
+             <div class="mb-4"> 
+             <div class="mb-3">
+                <label for="searchDate" class="form-label">Filtrer par Date d'Inscription</label>
+                <input type="date" class="form-control" id="searchDate">
+            </div>
+            
+             <div class="mb-3">
+                <label for="search" class="form-label">Rechercher un Abonné</label>
+                <input type="text" class="form-control" id="search" placeholder="Rechercher par nom ou prénom">
+            </div>
+            </div>
              <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addAbonneModal" onclick="openAddModal()">Ajouter un Abonné</button>
-
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    
-                    <th>Nom</th>
-                    <th>Prénom</th>
-                    <th>Adresse</th>
-                    <th>Date d'Inscription</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for abonne in abonnés %}
-                <tr>
-                    
-                    <td>{{ abonne.nom }}</td>
-                    <td>{{ abonne.prenom }}</td>
-                    <td>{{ abonne.adresse }}</td>
-                    <td>{{ abonne.date_inscription }}</td>
-                    <td>
-                        <button class="btn btn-info" onclick="viewAbonne('{{ abonne.id }}')">Consulter</button>
-
-                        <button class="btn btn-danger" onclick="deleteAbonne('{{ abonne.id }}')">Supprimer</button>
-                        
+             <table class="table table-bordered" id="abonne">
+                <thead>
+                    <tr>
+                        <th>Nom</th>
+                        <th>Prénom</th>
+                        <th>Adresse</th>
+                        <th>Date d'Inscription</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for abonne in abonnés %}
+                    <tr>
+                        <td>{{ abonne.nom }}</td>
+                        <td>{{ abonne.prenom }}</td>
+                        <td>{{ abonne.adresse }}</td>
+                        <td>{{ abonne.date_inscription }}</td>
+                        <td>
+                            <button class="btn btn-info" onclick="viewAbonne('{{ abonne.id }}')">Consulter</button>
+                            <button class="btn btn-danger" onclick="deleteAbonne('{{ abonne.id }}')">Supprimer</button>
                             <button class="btn btn-warning btn-sm update-btn" data-bs-toggle="modal" data-bs-target="#updateModal" 
-                                    data-id="{{ abonne.id }}" data-nom="{{ abonne.nom }}" data-prenom="{{ abonne.prenom }}" data-adresse="{{ abonne.adresse }}" 
-                                    data-date_inscription="{{ abonne.date_inscription }}">
+                                data-id="{{ abonne.id }}" data-nom="{{ abonne.nom }}" data-prenom="{{ abonne.prenom }}" data-adresse="{{ abonne.adresse }}" 
+                                data-date_inscription="{{ abonne.date_inscription }}">
                                 Mettre à jour
                             </button>
-                        
-                        
-                        
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                            <button class="btn btn-primary" onclick="showHistorique('{{ abonne.id }}')">Historique</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
 
    
 
@@ -210,6 +223,20 @@
 
 
 
+<!-- Modale Historique des Emprunts -->
+<div class="modal fade" id="historiqueModal" tabindex="-1" aria-labelledby="historiqueModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="historiqueModalLabel">Historique des Emprunts</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <ul id="historiqueList"></ul> <!-- Liste des emprunts -->
+            </div>
+        </div>
+    </div>
+</div>
 
 
 
@@ -220,12 +247,15 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+
+
     <script>
         $(document).ready(function() {
     // Charger la liste des abonnés
     $.getJSON('/getabonne', function(data) {
         const abonnés = data.abonnes;
         const table = $('#abonne-table');
+        
         abonnés.forEach(abonne => {
             const row = `
                 <tr>
@@ -266,7 +296,6 @@ $(document).on('click', '.update-btn', function() {
     $('#updateModal').modal('show');
 });
 
-
     // Envoyer les modifications
     $('#updateForm').submit(function(e) {
     e.preventDefault();
@@ -295,7 +324,23 @@ $(document).on('click', '.update-btn', function() {
 });
 
 });
-
+$('#search').on('keyup', function() {
+            var value = $(this).val().toLowerCase(); // Récupérer la valeur du champ de recherche
+            $('#abonne tbody tr').filter(function() {
+                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1); // Filtrer les lignes
+            });
+        });
+        $('#searchDate').on('change', function() {
+        var searchDate = $(this).val(); // Récupérer la date sélectionnée
+        $('#abonne tbody tr').filter(function() {
+            var rowDate = $(this).find('td:eq(3)').text(); // Récupérer la date d'inscription de la ligne
+            if (searchDate) {
+                $(this).toggle(rowDate === searchDate); // Filtrer par date
+            } else {
+                $(this).show(); // Si aucun filtre n'est sélectionné, afficher toutes les lignes
+            }
+        });
+    });
     </script>
 </body>
 </html>

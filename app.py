@@ -536,7 +536,32 @@ def emprunter_document(document_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/historique_emprunts/<abonne_id>', methods=['GET'])
+def historique_emprunts(abonne_id):
+    # Valider si l'ID est valide
+    if not ObjectId.is_valid(abonne_id):
+        return jsonify({"error": "ID invalide"}), 400
 
+    try:
+        # Récupérer les emprunts associés à cet abonné
+        emprunts = mongo.db.emprunts.find({"abonne_id": abonne_id})
+        emprunts_list = [
+            {
+                "id": str(emprunt["_id"]),
+                "document_id": emprunt["document_id"],
+                "titre_document": mongo.db.documents.find_one({"_id": ObjectId(emprunt["document_id"])})["titre"],
+                "date_emprunt": emprunt["date_emprunt"],
+                "date_retour": emprunt["date_retour"],
+                "status": emprunt["status"]
+            }
+            for emprunt in emprunts
+        ]
+
+        # Retourner la liste sous forme JSON
+        return jsonify({"historique_emprunts": emprunts_list}), 200
+
+    except Exception as e:
+        return jsonify({"error": f"Erreur lors de la récupération de l'historique: {str(e)}"}), 500
 
 
 if __name__ == '__main__':
